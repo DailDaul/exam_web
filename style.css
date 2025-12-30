@@ -37,3 +37,54 @@ body {
         font-size: 1.1rem;
     }
 }
+
+/* стили для личного кабинета */
+
+/* анимация для строк таблицы */
+#ordersTable tbody tr {
+    transition: background-color 0.2s;
+}
+
+#ordersTable tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* стили для карточек статистики */
+.card .display-6 {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+/* кнопки действий в таблице */
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* адаптивность таблицы */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group-sm > .btn {
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* стили для модальных окон */
+.modal-body h6 {
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* стили для опций в деталях заказа */
+#detailOptions .alert {
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+}
