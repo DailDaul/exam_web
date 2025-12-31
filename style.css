@@ -1,5 +1,8 @@
+/* кастомные стили для языковой школы */
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-top: 20px;
 }
 
 .navbar-brand {
@@ -7,12 +10,17 @@ body {
     font-size: 1.5rem;
 }
 
+.navbar-brand img {
+    margin-right: 10px;
+}
+
 .card {
-    transition: transform 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .social-links a {
@@ -21,6 +29,11 @@ body {
 
 .social-links a:hover {
     opacity: 0.7;
+    text-decoration: none;
+}
+
+#notification-area {
+    z-index: 9999;
 }
 
 #notification-area .alert {
@@ -28,7 +41,17 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* адаптивность для карточек курсов */
+/* стили для таблиц */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+/* стили для кнопок */
+.btn-group-sm > .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+/* адаптивность */
 @media (max-width: 768px) {
     .display-4 {
         font-size: 2.5rem;
@@ -36,32 +59,7 @@ body {
     .lead {
         font-size: 1.1rem;
     }
-}
-
-/* стили для личного кабинета */
-
-/* анимация для строк таблицы */
-#ordersTable tbody tr {
-    transition: background-color 0.2s;
-}
-
-#ordersTable tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
-}
-
-/* стили для карточек статистики */
-.card .display-6 {
-    font-size: 2.5rem;
-    font-weight: bold;
-}
-
-/* кнопки действий в таблице */
-.btn-group-sm > .btn {
-    padding: 0.25rem 0.5rem;
-}
-
-/* адаптивность таблицы */
-@media (max-width: 768px) {
+    
     .table-responsive {
         font-size: 0.9rem;
     }
@@ -73,6 +71,17 @@ body {
     .btn-group-sm > .btn {
         margin-bottom: 0.25rem;
     }
+}
+
+/* стили для карточек статистики */
+.card .display-6 {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+/* анимация для строк таблицы */
+#ordersTable tbody tr {
+    transition: background-color 0.2s;
 }
 
 /* стили для модальных окон */
@@ -89,4 +98,59 @@ body {
     padding: 0.5rem 1rem;
 }
 
-/*
+/* стили для аватаров */
+.avatar-placeholder {
+    background: linear-gradient(135deg, #6c757d, #495057);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* стили для бейджей */
+.badge {
+    font-size: 0.8em;
+    padding: 0.35em 0.65em;
+}
+
+/* стили для футера */
+footer a {
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* утилитарные классы */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.text-decoration-none:hover {
+    text-decoration: none;
+}
+
+/* стили для форм */
+.form-control:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* загрузка и спиннеры */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* стили для пустых состояний */
+.empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
