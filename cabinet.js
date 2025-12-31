@@ -70,6 +70,55 @@ function setupCabinetEventListeners() {
     }
 }
 
+function updateStatistics() {
+    if (!API.orders.allOrders.length) {
+        document.getElementById('activeOrdersCount').textContent = '0';
+        document.getElementById('completedOrdersCount').textContent = '0';
+        document.getElementById('totalAmount').textContent = '0 ₽';
+        document.getElementById('averageAmount').textContent = '0 ₽';
+        return;
+    }
+    
+    const today = new Date();
+    const activeOrders = API.orders.allOrders.filter(order => {
+        const orderDate = new Date(order.date_start);
+        return orderDate >= today;
+    });
+    
+    const completedOrders = API.orders.allOrders.filter(order => {
+        const orderDate = new Date(order.date_start);
+        return orderDate < today;
+    });
+    
+    const totalPrice = API.orders.allOrders.reduce((sum, order) => sum + (order.price || 0), 0);
+    const averagePrice = totalPrice / API.orders.allOrders.length;
+    
+    document.getElementById('activeOrdersCount').textContent = activeOrders.length;
+    document.getElementById('completedOrdersCount').textContent = completedOrders.length;
+    document.getElementById('totalAmount').textContent = API.utils.formatPrice(totalPrice);
+    document.getElementById('averageAmount').textContent = API.utils.formatPrice(Math.round(averagePrice));
+    
+    //добавляем информацию о лимите заявок
+    this.showOrderLimitWarning();
+}
+
+function showOrderLimitWarning() {
+    const maxOrders = 10; //из API.config
+    const currentOrders = API.orders.allOrders.length;
+    
+    if (currentOrders >= maxOrders) {
+        API.utils.showNotification(
+            `Внимание! Достигнут лимит в ${maxOrders} заявок. Удалите старые заявки перед созданием новых.`,
+            'warning'
+        );
+    } else if (currentOrders >= maxOrders - 2) {
+        API.utils.showNotification(
+            `Осталось ${maxOrders - currentOrders} из ${maxOrders} доступных заявок.`,
+            'info'
+        );
+    }
+}
+
 //глобальные функции для вызова из HTML
 function showOrderDetail(orderId) {
     API.orders.showDetailModal(orderId);
