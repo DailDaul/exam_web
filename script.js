@@ -17,6 +17,11 @@ function initPage() {
     //отображаем репетиторов
     API.tutors.render('tutorsContainer');
     
+    //инициализируем Application (поиск репетиторов и оформление заявок)
+    if (typeof Application !== 'undefined') {
+        Application.init();
+    }
+    
     //инициализируем тултипы
     API.utils.initializeTooltips();
 }
@@ -59,7 +64,11 @@ function openCourseDetail(courseId) {
 }
 
 function selectTutor(tutorId) {
-    API.orders.showCreateForm('tutor', tutorId);
+    if (typeof Application !== 'undefined') {
+        Application.selectTutor(tutorId);
+    } else {
+        API.orders.showCreateForm('tutor', tutorId);
+    }
 }
 
 function searchCourses() {
@@ -67,4 +76,13 @@ function searchCourses() {
     const level = document.getElementById('courseLevelSelect')?.value || '';
     const filteredCourses = API.courses.filter(searchTerm, level);
     API.courses.render('coursesContainer', 1, filteredCourses);
+}
+
+//функция для подачи заявки на курс (используется в карточках)
+function applyForCourse(courseId) {
+    if (typeof Application !== 'undefined') {
+        Application.openCourseApplication(courseId);
+    } else {
+        API.orders.showCreateForm('course', courseId);
+    }
 }
