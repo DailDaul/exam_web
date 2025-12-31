@@ -142,6 +142,17 @@
                 </ul>
             </nav>
         </div>
+
+        <div class="d-grid gap-2">
+            <button class="btn btn-outline-primary btn-course-apply" 
+                    data-course-id="${course.id}">
+                <i class="bi bi-cart-plus"></i> Подать заявку
+            </button>
+            <button class="btn btn-outline-secondary" 
+                    onclick="API.courses.showDetails(${course.id})">
+                <i class="bi bi-info-circle"></i> Подробнее
+            </button>
+        </div>
     </section>
 
     <!-- репетиторы -->
