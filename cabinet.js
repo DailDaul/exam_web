@@ -103,19 +103,30 @@ function updateStatistics() {
 }
 
 function showOrderLimitWarning() {
-    const maxOrders = 10; //из API.config
+    const maxOrders = 10;
     const currentOrders = API.orders.allOrders.length;
+    const alertEl = document.getElementById('orderLimitAlert');
+    const ordersUsedEl = document.getElementById('ordersUsed');
+    const warningTextEl = document.getElementById('limitWarningText');
+    
+    if (!alertEl || !ordersUsedEl || !warningTextEl) return;
+    
+    ordersUsedEl.textContent = currentOrders;
     
     if (currentOrders >= maxOrders) {
-        API.utils.showNotification(
-            `Внимание! Достигнут лимит в ${maxOrders} заявок. Удалите старые заявки перед созданием новых.`,
-            'warning'
-        );
+        alertEl.className = 'alert alert-danger';
+        warningTextEl.textContent = 'Достигнут лимит! Удалите старые заявки.';
+        alertEl.style.display = 'block';
     } else if (currentOrders >= maxOrders - 2) {
-        API.utils.showNotification(
-            `Осталось ${maxOrders - currentOrders} из ${maxOrders} доступных заявок.`,
-            'info'
-        );
+        alertEl.className = 'alert alert-warning';
+        warningTextEl.textContent = `Осталось ${maxOrders - currentOrders} заявок.`;
+        alertEl.style.display = 'block';
+    } else if (currentOrders >= maxOrders - 5) {
+        alertEl.className = 'alert alert-info';
+        warningTextEl.textContent = `Использовано ${currentOrders} из ${maxOrders} заявок.`;
+        alertEl.style.display = 'block';
+    } else {
+        alertEl.style.display = 'none';
     }
 }
 
