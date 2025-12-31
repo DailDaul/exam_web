@@ -3,8 +3,9 @@ const API = {
     //конфиги
     config: {
         baseURL: 'http://exam-api-courses.std-900.ist.mospolytech.ru',
-        apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4', //сохраняем ключ в localStorage
-        itemsPerPage: 5
+        apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4',
+        itemsPerPage: 5,
+        maxOrdersPerUser: 10 //добавляем ограничение
     },
 
     //утилиты
@@ -70,7 +71,10 @@ const API = {
     //HTTP-клиент
     client: {
         async request(endpoint, options = {}) {
-            const url = `${API.config.baseURL}${endpoint}${endpoint.includes('?') ? '&' : '?'}api_key=${API.config.apiKey}`;
+            let url = `${API.config.baseURL}${endpoint}`;
+            //добавляем API ключ как query параметр
+            const separator = endpoint.includes('?') ? '&' : '?';
+            url = `${url}${separator}api_key=${API.config.apiKey}`;
             
             const defaultOptions = {
                 headers: {
@@ -483,6 +487,7 @@ const API = {
     orders: {
         allOrders: [],
         currentPage: 1,
+        maxOrders: 10, //максимум заявок
 
         async load() {
             try {
@@ -496,6 +501,11 @@ const API = {
 
         async create(orderData) {
             try {
+                //проверяем лимит заявок
+                if (this.allOrders.length >= this.maxOrders) {
+                    throw new Error(`Достигнут лимит в ${this.maxOrders} заявок. Удалите старые заявки перед созданием новых.`);
+                }
+            
                 const result = await API.client.post('/api/orders', orderData);
                 API.utils.showNotification('Заявка успешно создана!', 'success');
                 await this.load(); //обновляем список заявок
