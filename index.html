@@ -34,6 +34,11 @@
                     <li class="nav-item"><a class="nav-link" href="#contacts">Контакты</a></li>
                     <li class="nav-item"><a class="nav-link" href="cabinet.html">Личный кабинет</a></li>
                 </ul>
+                <li class="nav-item" id="apiSettingsItem">
+                        <a class="nav-link" href="#" onclick="if(typeof Auth!=='undefined') Auth.showModal(); else alert('Модуль авторизации не загружен')">
+                            <i class="bi bi-key"></i> API
+                        </a>
+                </li>
             </nav>
         </div>
     </header>
@@ -281,5 +286,6 @@
     <script src="js/api.js"></script>
     <script src="js/script.js"></script>
     <script src="js/application.js"></script>
+    <script src="js/auth.js"></script>
 </body>
 </html>
