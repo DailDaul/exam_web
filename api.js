@@ -71,55 +71,46 @@ const API = {
     //HTTP-клиент
     client: {
         async request(endpoint, options = {}) {
-            let url = `${API.config.baseURL}${endpoint}`;
-            //добавляем API ключ как query параметр
-            const separator = endpoint.includes('?') ? '&' : '?';
-            url = `${url}${separator}api_key=${API.config.apiKey}`;
-            
-            const defaultOptions = {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                }
-            };
-
-            const config = { ...defaultOptions, ...options };
-
-            try {
-                const response = await fetch(url, config);
-                
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                return await response.json();
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            }
+    let url = `${API.config.baseURL}${endpoint}`;
+    //добавляем API ключ как query параметр
+    const separator = endpoint.includes('?') ? '&' : '?';
+    url = `${url}${separator}api_key=${API.config.apiKey}`;
+    
+    // Если используем proxy
+    if (USE_PROXY && API.config.baseURL.startsWith('http://')) {
+        url = PROXY_URL + url;
+    }
+    
+    const defaultOptions = {
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
         },
+        mode: 'cors'
+    };
 
-        get(endpoint) {
-            return this.request(endpoint, { method: 'GET' });
-        },
+    const config = { ...defaultOptions, ...options };
 
-        post(endpoint, data) {
-            return this.request(endpoint, {
-                method: 'POST',
-                body: JSON.stringify(data)
-            });
-        },
+    try {
+        const response = await fetch(url, config);
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        }
 
-        put(endpoint, data) {
-            return this.request(endpoint, {
-                method: 'PUT',
-                body: JSON.stringify(data)
-            });
-        },
-
-        delete(endpoint) {
-            return this.request(endpoint, { method: 'DELETE' });
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+            API.utils.showNotification(
+                'Ошибка подключения к серверу API. Возможно, проблема с CORS или доступностью сервера.',
+                'danger'
+            );
+        } else {
+            API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
+        }
+        throw error;
         }
     },
 
