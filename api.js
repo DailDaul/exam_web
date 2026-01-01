@@ -5,7 +5,7 @@ const PROXY_URL = 'https://api.allorigins.win/raw?url='; //бесплатный 
 const API = {
     //конфиги
     config: {
-        baseURL: 'https://exam-api-courses.std-900.ist.mospolytech.ru/',
+        baseURL: 'https://exam-api-courses.std-900.ist.mospolytech.ru',
         apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4',
         itemsPerPage: 5,
         maxOrdersPerUser: 10 //добавляем ограничение
@@ -74,7 +74,7 @@ const API = {
     //HTTP-клиент
     client: {
         async request(endpoint, options = {}) {
-            let url = `${API.config.baseURL}${endpoint}`;
+            let url = `${API.config.baseURL}/${endpoint}`;
             url = url.replace(/\/\//g, '/').replace(':/', '://');
     
             //добавляем API ключ как query параметр
