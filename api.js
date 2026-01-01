@@ -1,15 +1,19 @@
-const USE_CORS_PROXY = false;
-const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; //добавляем определение
+//конфигурация API
+const API_CONFIG = {
+    baseURL: 'https://exam-api-courses.std-900.ist.mospolytech.ru',
+    apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4',
+    itemsPerPage: 5,
+    maxOrdersPerUser: 10
+};
+
+//прокси для CORS (запасной вариант)
+const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/';
+const USE_CORS_PROXY = false; // По умолчанию выключено
 
 //модуль для работы с API языковой школы
 const API = {
     //конфиги
-    config: {
-        baseURL: 'https://exam-api-courses.std-900.ist.mospolytech.ru',
-        apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4',
-        itemsPerPage: 5,
-        maxOrdersPerUser: 10 //добавляем ограничение
-    },
+    config: API_CONFIG,
 
     //утилиты
     utils: {
@@ -81,13 +85,9 @@ const API = {
             const separator = finalUrl.includes('?') ? '&' : '?';
             finalUrl = `${finalUrl}${separator}api_key=${API.config.apiKey}`;
     
-            //используем CORS proxy если включен
+            //проверяем, нужно ли использовать прокси
             const useProxy = localStorage.getItem('use_cors_proxy') === 'true' || USE_CORS_PROXY;
-            if (useProxy) {
-                // Используем CORS proxy
-                finalUrl = `${CORS_PROXY_URL}${finalUrl}`;
-            }
-    
+            
             const defaultOptions = {
                 headers: {
                     'Accept': 'application/json',
@@ -99,7 +99,8 @@ const API = {
             const config = { ...defaultOptions, ...options };
 
             try {
-                console.log('Fetching URL:', finalUrl); // Для отладки
+                //пытаемся сделать запрос напрямую
+                console.log('Fetching URL:', finalUrl);
                 const response = await fetch(finalUrl, config);
         
                 if (!response.ok) {
@@ -110,17 +111,39 @@ const API = {
                 return await response.json();
             } catch (error) {
                 console.error('API Error:', error);
-                console.error('URL that failed:', finalUrl);
-        
+                
+                //если CORS ошибка, пробуем через прокси
                 if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-                    API.utils.showNotification(
-                    'Ошибка подключения к серверу API. Проверьте интернет-соединение.',
-                    'danger'
-                );
-            } else {
-                API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
-            }
-            throw error;
+                    if (useProxy) {
+                        try {
+                            console.log('Trying with CORS proxy...');
+                            const proxyUrl = `${CORS_PROXY_URL}${finalUrl}`;
+                            const proxyResponse = await fetch(proxyUrl, config);
+                            
+                            if (!proxyResponse.ok) {
+                                const errorData = await proxyResponse.json().catch(() => ({}));
+                                throw new Error(errorData.error || `HTTP ${proxyResponse.status}: ${proxyResponse.statusText}`);
+                            }
+                            
+                            return await proxyResponse.json();
+                        } catch (proxyError) {
+                            console.error('Proxy request failed:', proxyError);
+                            API.utils.showNotification(
+                                'Не удалось подключиться к серверу API даже через прокси. Проверьте интернет-соединение.',
+                                'danger'
+                            );
+                            throw proxyError;
+                        }
+                    } else {
+                        API.utils.showNotification(
+                            'Ошибка CORS. Включите CORS прокси в настройках API.',
+                            'warning'
+                        );
+                    }
+                } else {
+                    API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
+                }
+                throw error;
             }
         }
     },
@@ -1140,12 +1163,6 @@ const API = {
         
         //сохраняем ключ в localStorage
         localStorage.setItem('api_key', this.config.apiKey);
-        
-        //проверяем настройку CORS прокси
-        const useProxy = localStorage.getItem('use_cors_proxy');
-        if (useProxy === 'true') {
-            console.log('CORS proxy enabled');
-        }
         
         return this;
     },
