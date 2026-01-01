@@ -1,0 +1,50 @@
+name: CORS Proxy API
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 * * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    
+    - name: Install dependencies
+      run: npm install express cors
+    
+    - name: Deploy proxy
+      run: |
+        cat > proxy.js << 'EOF'
+        const express = require('express');
+        const cors = require('cors');
+        const fetch = require('node-fetch');
+        
+        const app = express();
+        app.use(cors());
+        
+        app.get('/proxy', async (req, res) => {
+          try {
+            const url = req.query.url;
+            if (!url) {
+              return res.status(400).json({ error: 'URL parameter required' });
+            }
+            
+            const response = await fetch(url);
+            const data = await response.json();
+            res.json(data);
+          } catch (error) {
+            res.status(500).json({ error: error.message });
+          }
+        });
+        
+        app.listen(3000, () => console.log('Proxy running on port 3000'));
+        EOF
+        
+        node proxy.js
