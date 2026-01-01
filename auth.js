@@ -8,6 +8,25 @@ const Auth = {
         this.bindEvents();
     },
     
+    //проверка API ключа
+    checkApiKey() {
+        const savedKey = localStorage.getItem('api_key');
+        const defaultKey = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
+        
+        if (!savedKey && defaultKey === '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4') {
+            //используем дефолтный ключ
+            localStorage.setItem('api_key', defaultKey);
+            if (window.API && window.API.config) {
+                window.API.config.apiKey = defaultKey;
+            }
+            this.showNotification('Используется стандартный API ключ', 'info');
+        } else if (savedKey) {
+            if (window.API && window.API.config) {
+                window.API.config.apiKey = savedKey;
+            }
+        }
+    },
+    
     //проверка настройки CORS
     checkCorsSetting() {
         const useProxy = localStorage.getItem('use_cors_proxy');
@@ -16,9 +35,12 @@ const Auth = {
         }
     },
     
-    //добавляем в модальное окно настройку CORS
+    //создание модального окна для управления API ключом
     createApiKeyModal() {
+        const currentKey = localStorage.getItem('api_key') || 
+                          (window.API && window.API.config ? window.API.config.apiKey : '');
         const useProxy = localStorage.getItem('use_cors_proxy') === 'true';
+        
         const modalHTML = `
             <div class="modal fade" id="apiKeyModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -31,7 +53,7 @@ const Auth = {
                             <div class="mb-3">
                                 <label class="form-label">API Key</label>
                                 <input type="text" class="form-control" id="apiKeyInput" 
-                                       value="${localStorage.getItem('api_key') || API.config.apiKey}">
+                                       value="${currentKey}">
                                 <div class="form-text">
                                     Ключ передается в строке запроса: <code>?api_key=ВАШ_КЛЮЧ</code>
                                 </div>
@@ -70,6 +92,9 @@ const Auth = {
                             <button type="button" class="btn btn-outline-danger" onclick="Auth.resetSettings()">
                                 Сбросить к стандартным
                             </button>
+                            <button type="button" class="btn btn-outline-success" onclick="Auth.testApiConnection()">
+                                <i class="bi bi-wifi"></i> Тест подключения
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -87,7 +112,7 @@ const Auth = {
         const useProxy = document.getElementById('corsProxyToggle').checked;
         
         if (!newKey) {
-            API.utils.showNotification('API ключ не может быть пустым', 'danger');
+            this.showNotification('API ключ не может быть пустым', 'danger');
             return;
         }
         
@@ -101,9 +126,12 @@ const Auth = {
         
         localStorage.setItem('api_key', newKey);
         localStorage.setItem('use_cors_proxy', useProxy ? 'true' : 'false');
-        API.config.apiKey = newKey;
         
-        API.utils.showNotification('Настройки сохранены! Перезагрузите страницу для применения.', 'success');
+        if (window.API && window.API.config) {
+            window.API.config.apiKey = newKey;
+        }
+        
+        this.showNotification('Настройки сохранены! Перезагрузите страницу для применения.', 'success');
         
         const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal'));
         if (modal) modal.hide();
@@ -114,45 +142,54 @@ const Auth = {
         const defaultKey = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
         localStorage.setItem('api_key', defaultKey);
         localStorage.setItem('use_cors_proxy', 'false');
-        API.config.apiKey = defaultKey;
+        
+        if (window.API && window.API.config) {
+            window.API.config.apiKey = defaultKey;
+        }
+        
         document.getElementById('apiKeyInput').value = defaultKey;
         document.getElementById('corsProxyToggle').checked = false;
         
-        API.utils.showNotification('Настройки сброшены к стандартным', 'info');
+        this.showNotification('Настройки сброшены к стандартным', 'info');
     },
     
-    //сохранение API ключа
-    saveApiKey() {
-        const newKey = document.getElementById('apiKeyInput').value.trim();
-        
-        if (!newKey) {
-            API.utils.showNotification('API ключ не может быть пустым', 'danger');
-            return;
+    //тест подключения к API
+    testApiConnection: async function() {
+        try {
+            this.showNotification('Тестируем подключение к API...', 'info');
+            
+            if (!window.API || !window.API.client) {
+                this.showNotification('API модуль не загружен', 'danger');
+                return;
+            }
+            
+            //cохраняем текущий ключ
+            const currentKey = window.API.config.apiKey;
+            const testKey = document.getElementById('apiKeyInput').value.trim();
+            
+            //временно устанавливаем тестовый ключ
+            window.API.config.apiKey = testKey || currentKey;
+            
+            try {
+                const testResult = await window.API.client.request('/api/courses?limit=1');
+                
+                if (testResult && Array.isArray(testResult)) {
+                    this.showNotification(
+                        `Подключение успешно! Загружено ${testResult.length} курсов.`,
+                        'success'
+                    );
+                } else {
+                    this.showNotification('Некорректный ответ от API', 'warning');
+                }
+            } catch (error) {
+                this.showNotification(`Ошибка подключения: ${error.message}`, 'danger');
+            } finally {
+                //восстанавливаем оригинальный ключ
+                window.API.config.apiKey = currentKey;
+            }
+        } catch (error) {
+            this.showNotification(`Ошибка тестирования: ${error.message}`, 'danger');
         }
-        
-        //проверяем формат UUID
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        if (!uuidRegex.test(newKey)) {
-            API.utils.showNotification('Неверный формат API ключа (ожидается UUID)', 'warning');
-        }
-        
-        localStorage.setItem('api_key', newKey);
-        API.config.apiKey = newKey;
-        
-        API.utils.showNotification('API ключ сохранен! Перезагрузите страницу для применения.', 'success');
-        
-        const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal'));
-        if (modal) modal.hide();
-    },
-    
-    //сброс API ключа
-    resetApiKey() {
-        const defaultKey = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
-        localStorage.setItem('api_key', defaultKey);
-        API.config.apiKey = defaultKey;
-        document.getElementById('apiKeyInput').value = defaultKey;
-        
-        API.utils.showNotification('API ключ сброшен к стандартному', 'info');
     },
     
     //показать модальное окно
@@ -189,10 +226,10 @@ const Auth = {
     
     //проверка ответа API на ошибки авторизации
     handleAuthError(error) {
-        if (error.message && error.message.includes('авторизации') || 
-            error.message && error.message.includes('API Key')) {
+        if (error.message && (error.message.includes('авторизации') || 
+            error.message.includes('API Key'))) {
             
-            API.utils.showNotification(
+            this.showNotification(
                 'Ошибка авторизации. Проверьте API ключ в настройках.',
                 'danger'
             );
@@ -202,14 +239,46 @@ const Auth = {
             return true;
         }
         return false;
+    },
+    
+    //вспомогательная функция для уведомлений
+    showNotification(message, type = 'info') {
+        if (window.API && window.API.utils && typeof window.API.utils.showNotification === 'function') {
+            window.API.utils.showNotification(message, type);
+        } else {
+            // Простая реализация, если API еще не загружен
+            const notificationArea = document.getElementById('notification-area');
+            if (!notificationArea) return;
+            
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            notificationArea.appendChild(alert);
+            
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
     }
 };
 
 //инициализация при загрузке
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof API !== 'undefined') {
-        Auth.init();
-    }
+    //ждем немного, чтобы API успел загрузиться
+    setTimeout(() => {
+        if (typeof Auth !== 'undefined') {
+            try {
+                Auth.init();
+            } catch (error) {
+                console.error('Ошибка инициализации Auth:', error);
+            }
+        }
+    }, 100);
 });
 
 window.Auth = Auth;
