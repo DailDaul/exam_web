@@ -1,5 +1,16 @@
-//script.js - Главная страница (упрощенная версия с использованием API модуля)
+//главная страница (упрощенная версия с использованием API модуля)
 document.addEventListener('DOMContentLoaded', async () => {
+    //проверяем, что API загружен
+    if (typeof API === 'undefined') {
+        console.error('API не загружен');
+        setTimeout(() => {
+            if (typeof API !== 'undefined') {
+                initPage();
+            }
+        }, 1000);
+        return;
+    }
+    
     //инициализируем API
     await API.loadAll();
     
