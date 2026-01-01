@@ -177,7 +177,7 @@ const API = {
 
         async load() {
             try {
-                this.allCourses = await API.client.get('/api/courses');
+                this.allCourses = await API.client.request('/api/courses');
                 return this.allCourses;
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки курсов: ${error.message}`, 'danger');
@@ -187,7 +187,7 @@ const API = {
 
         async getById(id) {
             try {
-                return await API.client.get(`/api/courses/${id}`);
+                return await API.client.request(`/api/courses/${id}`);
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки курса: ${error.message}`, 'danger');
                 return null;
@@ -389,7 +389,7 @@ const API = {
 
         async load() {
             try {
-                this.allTutors = await API.client.get('/api/tutors');
+                this.allTutors = await API.client.request('/api/tutors');
                 return this.allTutors;
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки репетиторов: ${error.message}`, 'danger');
@@ -399,7 +399,7 @@ const API = {
 
         async getById(id) {
             try {
-                return await API.client.get(`/api/tutors/${id}`);
+                return await API.client.request(`/api/tutors/${id}`);
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки репетитора: ${error.message}`, 'danger');
                 return null;
@@ -491,7 +491,7 @@ const API = {
 
         async load() {
             try {
-                this.allOrders = await API.client.get('/api/orders');
+                this.allOrders = await API.client.request('/api/orders');
                 return this.allOrders;
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки заявок: ${error.message}`, 'danger');
@@ -506,7 +506,10 @@ const API = {
                     throw new Error(`Достигнут лимит в ${this.maxOrders} заявок. Удалите старые заявки перед созданием новых.`);
                 }
             
-                const result = await API.client.post('/api/orders', orderData);
+                const result = await API.client.request('/api/orders', {
+                    method: 'POST',
+                    body: JSON.stringify(orderData)
+                });
                 API.utils.showNotification('Заявка успешно создана!', 'success');
                 await this.load(); //обновляем список заявок
                 return result;
@@ -518,7 +521,10 @@ const API = {
 
         async update(id, orderData) {
             try {
-                const result = await API.client.put(`/api/orders/${id}`, orderData);
+                const result = await API.client.request(`/api/orders/${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(orderData)
+                });
                 API.utils.showNotification('Заявка успешно обновлена!', 'success');
                 await this.load(); //обновляем список заявок
                 return result;
@@ -530,7 +536,9 @@ const API = {
 
         async delete(id) {
             try {
-                const result = await API.client.delete(`/api/orders/${id}`);
+                const result = await API.client.request(`/api/orders/${id}`, {
+                    method: 'DELETE'
+                });
                 API.utils.showNotification('Заявка успешно удалена!', 'success');
                 await this.load(); //обновляем список заявок
                 return result;
@@ -542,7 +550,7 @@ const API = {
 
         async getById(id) {
             try {
-                return await API.client.get(`/api/orders/${id}`);
+                return await API.client.request(`/api/orders/${id}`);
             } catch (error) {
                 API.utils.showNotification(`Ошибка загрузки заявки: ${error.message}`, 'danger');
                 return null;
@@ -1151,10 +1159,14 @@ const API = {
     }
 };
 
-//инициализируем API при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    API.init();
-});
-
 //экспортируем API в глобальную область видимости
 window.API = API;
+
+//инициализируем API при загрузке
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.API && typeof window.API.init === 'function') {
+        window.API.init();
+    } else {
+        console.error('API объект не инициализирован');
+    }
+});
