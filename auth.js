@@ -4,29 +4,24 @@ const Auth = {
     init() {
         this.createApiKeyModal();
         this.checkApiKey();
+        this.checkCorsSetting();
         this.bindEvents();
     },
     
-    //проверка API ключа
-    checkApiKey() {
-        const savedKey = localStorage.getItem('api_key');
-        const defaultKey = API.config.apiKey;
-        
-        if (!savedKey && defaultKey === '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4') {
-            //используем дефолтный ключ
-            localStorage.setItem('api_key', defaultKey);
-            API.config.apiKey = defaultKey;
-            API.utils.showNotification('Используется стандартный API ключ', 'info');
-        } else if (savedKey) {
-            API.config.apiKey = savedKey;
+    //проверка настройки CORS
+    checkCorsSetting() {
+        const useProxy = localStorage.getItem('use_cors_proxy');
+        if (useProxy === 'true' && window.API) {
+            window.API.config.useCorsProxy = true;
         }
     },
     
-    //создание модального окна для управления API ключом
+    //добавляем в модальное окно настройку CORS
     createApiKeyModal() {
+        const useProxy = localStorage.getItem('use_cors_proxy') === 'true';
         const modalHTML = `
             <div class="modal fade" id="apiKeyModal" tabindex="-1">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">Настройки API</h5>
@@ -40,12 +35,18 @@ const Auth = {
                                 <div class="form-text">
                                     Ключ передается в строке запроса: <code>?api_key=ВАШ_КЛЮЧ</code>
                                 </div>
-                                <div class="form-text text-muted mt-2">
-                                    <small>
-                                        <i class="bi bi-info-circle"></i> 
-                                        Максимум 10 заявок на одного пользователя. 
-                                        Текущий ключ: ${API.config.apiKey.substring(0, 8)}...
-                                    </small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="corsProxyToggle" ${useProxy ? 'checked' : ''}>
+                                    <label class="form-check-label" for="corsProxyToggle">
+                                        Использовать CORS прокси
+                                    </label>
+                                </div>
+                                <div class="form-text">
+                                    Включайте только если возникают ошибки CORS при загрузке данных
                                 </div>
                             </div>
                             
@@ -63,11 +64,11 @@ const Auth = {
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 Закрыть
                             </button>
-                            <button type="button" class="btn btn-primary" onclick="Auth.saveApiKey()">
+                            <button type="button" class="btn btn-primary" onclick="Auth.saveSettings()">
                                 Сохранить
                             </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="Auth.resetApiKey()">
-                                Сбросить к стандартному
+                            <button type="button" class="btn btn-outline-danger" onclick="Auth.resetSettings()">
+                                Сбросить к стандартным
                             </button>
                         </div>
                     </div>
@@ -78,6 +79,46 @@ const Auth = {
         if (!document.getElementById('apiKeyModal')) {
             document.body.insertAdjacentHTML('beforeend', modalHTML);
         }
+    },
+    
+    //сохраняем все настройки
+    saveSettings() {
+        const newKey = document.getElementById('apiKeyInput').value.trim();
+        const useProxy = document.getElementById('corsProxyToggle').checked;
+        
+        if (!newKey) {
+            API.utils.showNotification('API ключ не может быть пустым', 'danger');
+            return;
+        }
+        
+        //проверяем формат UUID
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(newKey)) {
+            if (!confirm('Неверный формат API ключа. Все равно сохранить?')) {
+                return;
+            }
+        }
+        
+        localStorage.setItem('api_key', newKey);
+        localStorage.setItem('use_cors_proxy', useProxy ? 'true' : 'false');
+        API.config.apiKey = newKey;
+        
+        API.utils.showNotification('Настройки сохранены! Перезагрузите страницу для применения.', 'success');
+        
+        const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal'));
+        if (modal) modal.hide();
+    },
+    
+    //сброс настроек
+    resetSettings() {
+        const defaultKey = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
+        localStorage.setItem('api_key', defaultKey);
+        localStorage.setItem('use_cors_proxy', 'false');
+        API.config.apiKey = defaultKey;
+        document.getElementById('apiKeyInput').value = defaultKey;
+        document.getElementById('corsProxyToggle').checked = false;
+        
+        API.utils.showNotification('Настройки сброшены к стандартным', 'info');
     },
     
     //сохранение API ключа
