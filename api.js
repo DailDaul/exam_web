@@ -1,4 +1,4 @@
-const USE_CORS_PROXY = false;
+const USE_CORS_PROXY = true;
 const PROXY_URL = 'https://api.allorigins.win/raw?url='; //бесплатный CORS proxy
 
 //модуль для работы с API языковой школы
