@@ -1,5 +1,4 @@
 //модуль для процесса оформления заявки
-
 const Application = {
     //текущий выбранный репетитор
     selectedTutor: null,
@@ -972,6 +971,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(checkAPI);
                 API.loadAll().then(() => {
                     Application.init();
+                }).catch(() => {
+                    console.error('Не удалось загрузить данные через API');
                 });
             }
         }, 100);
