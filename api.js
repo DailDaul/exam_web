@@ -1,5 +1,5 @@
 const USE_CORS_PROXY = true;
-const PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; //бесплатный CORS proxy
+const PROXY_URL = '.github/workflows/proxy.yml'; //НАШ ПРОКСИ
 
 //модуль для работы с API языковой школы
 const API = {
