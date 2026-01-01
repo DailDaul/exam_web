@@ -1,4 +1,4 @@
-const USE_CORS_PROXY = false;
+const USE_CORS_PROXY = true;
 const CORS_PROXY_URL = 'https://cors-anywhere.herokuapp.com/'; //добавляем определение
 
 //модуль для работы с API языковой школы
