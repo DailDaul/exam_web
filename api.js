@@ -120,6 +120,7 @@ const API = {
                 API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
             }
             throw error;
+            }
         }
     },
 
@@ -1154,7 +1155,6 @@ const API = {
         } catch (error) {
             this.utils.showNotification('Ошибка загрузки данных', 'danger');
             return false;
-            }
         }
     }
 };
