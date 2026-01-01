@@ -3,7 +3,7 @@ const API = {
     //конфиги
     config: {
         baseURL: 'http://exam-api-courses.std-900.ist.mospolytech.ru',
-        apiKey: localStorage.getItem('api_key') || '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4',
+        apiKey: localStorage.getItem('api_key') || 'ecaca6c4-5c79-478d-93ec-9dd4b70763ce',
         itemsPerPage: 5,
         maxOrdersPerUser: 10 //добавляем ограничение
     },
