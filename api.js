@@ -1146,6 +1146,7 @@ const API = {
         } catch (error) {
             this.utils.showNotification('Ошибка загрузки данных', 'danger');
             return false;
+            }
         }
     }
 };
