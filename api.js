@@ -1,5 +1,5 @@
 const USE_CORS_PROXY = true;
-const PROXY_URL = 'https://api.allorigins.win/raw?url='; //бесплатный CORS proxy
+const PROXY_URL = 'http://wp.std-338.ist.mospolytech.ru/'; //бесплатный CORS proxy
 
 //модуль для работы с API языковой школы
 const API = {
