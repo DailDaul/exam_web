@@ -74,17 +74,17 @@ const API = {
     //HTTP-клиент
     client: {
         async request(endpoint, options = {}) {
-            let url = `${API.config.baseURL}/${endpoint}`;
-            url = url.replace(/\/\//g, '/').replace(':/', '://');
+            let finalUrl = `${API.config.baseURL}/${endpoint}`;
+            finalUrl = finalUrl.replace(/\/\//g, '/').replace(':/', '://');
     
             //добавляем API ключ как query параметр
-            const separator = endpoint.includes('?') ? '&' : '?';
-            url = `${url}${separator}api_key=${API.config.apiKey}`;
+            const separator = finalUrl.includes('?') ? '&' : '?';
+            finalUrl = `${finalUrl}${separator}api_key=${API.config.apiKey}`;
     
             //используем CORS proxy если включен
-            let finalUrl = url;
-            if (USE_CORS_PROXY && !url.includes(PROXY_URL)) {
-                finalUrl = PROXY_URL + encodeURIComponent(url);
+           if (USE_CORS_PROXY) {
+               // Кодируем в прокси только конечный URL
+               finalUrl = `${PROXY_URL}${encodeURIComponent(finalUrl)}`;
             }
     
             const defaultOptions = {
