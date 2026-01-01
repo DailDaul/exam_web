@@ -1,3 +1,6 @@
+const USE_CORS_PROXY = true;
+const PROXY_URL = 'https://api.allorigins.win/raw?url='; //бесплатный CORS proxy
+
 //модуль для работы с API языковой школы
 const API = {
     //конфиги
@@ -71,46 +74,52 @@ const API = {
     //HTTP-клиент
     client: {
         async request(endpoint, options = {}) {
-    let url = `${API.config.baseURL}${endpoint}`;
-    //добавляем API ключ как query параметр
-    const separator = endpoint.includes('?') ? '&' : '?';
-    url = `${url}${separator}api_key=${API.config.apiKey}`;
+            let url = `${API.config.baseURL}${endpoint}`;
+            url = url.replace(/\/\//g, '/').replace(':/', '://');
     
-    // Если используем proxy
-    if (USE_PROXY && API.config.baseURL.startsWith('http://')) {
-        url = PROXY_URL + url;
-    }
+            //добавляем API ключ как query параметр
+            const separator = endpoint.includes('?') ? '&' : '?';
+            url = `${url}${separator}api_key=${API.config.apiKey}`;
     
-    const defaultOptions = {
-        headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-        },
-        mode: 'cors'
-    };
+            //используем CORS proxy если включен
+            let finalUrl = url;
+            if (USE_CORS_PROXY && !url.includes(PROXY_URL)) {
+                finalUrl = PROXY_URL + encodeURIComponent(url);
+            }
+    
+            const defaultOptions = {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                mode: 'cors'
+            };
 
-    const config = { ...defaultOptions, ...options };
+            const config = { ...defaultOptions, ...options };
 
-    try {
-        const response = await fetch(url, config);
+            try {
+                console.log('Fetching URL:', finalUrl); // Для отладки
+                const response = await fetch(finalUrl, config);
         
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-        }
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+                }
 
-        return await response.json();
-    } catch (error) {
-        console.error('API Error:', error);
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            API.utils.showNotification(
-                'Ошибка подключения к серверу API. Возможно, проблема с CORS или доступностью сервера.',
-                'danger'
-            );
-        } else {
-            API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
-        }
-        throw error;
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                console.error('URL that failed:', finalUrl);
+        
+                if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                    API.utils.showNotification(
+                    'Ошибка подключения к серверу API. Проверьте интернет-соединение.',
+                    'danger'
+                );
+            } else {
+                API.utils.showNotification(`Ошибка API: ${error.message}`, 'danger');
+            }
+            throw error;
         }
     },
 
