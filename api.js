@@ -1148,7 +1148,7 @@ const API = {
             return false;
         }
     }
-},
+};
 
 //инициализируем API при загрузке
 document.addEventListener('DOMContentLoaded', () => {
