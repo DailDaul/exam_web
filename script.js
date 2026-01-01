@@ -1,25 +1,54 @@
 //главная страница (упрощенная версия с использованием API модуля)
 document.addEventListener('DOMContentLoaded', async () => {
-    //проверяем, что API загружен
-    if (typeof API === 'undefined') {
-        console.error('API не загружен');
-        setTimeout(() => {
-            if (typeof API !== 'undefined') {
-                initPage();
-            }
-        }, 1000);
-        return;
+    try {
+        //проверяем, что API загружен
+        if (typeof API === 'undefined') {
+            console.error('API не загружен');
+            showError('Модуль API не загружен. Проверьте консоль браузера.');
+            return;
+        }
+        
+        //инициализируем API
+        const loaded = await API.loadAll();
+        
+        if (loaded) {
+            //инициализируем страницу
+            initPage();
+            
+            //настройка обработчиков событий
+            setupEventListeners();
+        } else {
+            showError('Не удалось загрузить данные. Проверьте API ключ.');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка инициализации:', error);
+        showError(`Ошибка загрузки: ${error.message}`);
     }
-    
-    //инициализируем API
-    await API.loadAll();
-    
-    //инициализируем страницу
-    initPage();
-    
-    //настройка обработчиков событий
-    setupEventListeners();
 });
+
+function showError(message) {
+    const notificationArea = document.getElementById('notification-area') || 
+                           API.utils.createNotificationArea();
+    
+    API.utils.showNotification(message, 'danger');
+    
+    // Показываем кнопку для настроек API
+    setTimeout(() => {
+        const settingsBtn = document.createElement('button');
+        settingsBtn.className = 'btn btn-warning btn-sm ms-3';
+        settingsBtn.innerHTML = '<i class="bi bi-gear"></i> Настройки API';
+        settingsBtn.onclick = () => {
+            if (typeof Auth !== 'undefined') Auth.showModal();
+        };
+        
+        const alert = notificationArea.querySelector('.alert:last-child');
+        if (alert) {
+            alert.querySelector('.btn-close').remove();
+            alert.appendChild(settingsBtn);
+        }
+    }, 1000);
+}
 
 function initPage() {
     //отображаем курсы
