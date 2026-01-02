@@ -1,7 +1,236 @@
-//глобальные переменные
+// Глобальные переменные
 let allOrders = [];
 let currentOrderPage = 1;
 const ordersPerPage = 10;
+let isDemoMode = false;
+
+// Демо-заявки
+const demoOrders = [
+    {
+        id: 1,
+        tutor_id: 0,
+        course_id: 2,
+        course_name: "Английский для продвинутых",
+        date_start: "2025-01-15",
+        time_start: "14:00",
+        duration: 1,
+        persons: 2,
+        price: 2500,
+        early_registration: true,
+        group_enrollment: false,
+        intensive_course: true,
+        supplementary: true,
+        personalized: false,
+        excursions: false,
+        assessment: false,
+        interactive: true,
+        status: "pending"
+    },
+    {
+        id: 2,
+        tutor_id: 1,
+        tutor_name: "Ирина Петровна",
+        course_id: 0,
+        date_start: "2025-01-20",
+        time_start: "10:00",
+        duration: 2,
+        persons: 1,
+        price: 1000,
+        early_registration: false,
+        group_enrollment: false,
+        intensive_course: false,
+        supplementary: true,
+        personalized: true,
+        excursions: false,
+        assessment: true,
+        interactive: false,
+        status: "approved"
+    }
+];
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', async function() {
+    // Проверяем авторизацию
+    if (!Auth.isAuthenticated()) {
+        Utils.showNotification('Для доступа к личному кабинету требуется авторизация', 'warning');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+        return;
+    }
+    
+    // Проверяем режим
+    isDemoMode = Auth.getApiKey() === 'demo';
+    
+    // Загружаем заявки
+    await loadOrders();
+    
+    // Инициализируем обработчики событий
+    initEventHandlers();
+    
+    // Настраиваем модальные окна
+    setupModals();
+});
+
+// Загрузка заявок пользователя с обработкой ошибок
+async function loadOrders() {
+    try {
+        const tableBody = document.getElementById('ordersTableBody');
+        if (tableBody) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="9" class="text-center">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                        Загрузка заявок...
+                    </td>
+                </tr>
+            `;
+        }
+        
+        if (isDemoMode) {
+            // Используем демо-данные
+            await new Promise(resolve => setTimeout(resolve, 800)); // Имитация загрузки
+            allOrders = demoOrders;
+            Utils.showNotification('Загружены демо-заявки', 'info');
+        } else {
+            // Используем реальный API
+            allOrders = await API.getOrders();
+        }
+        
+        updateStatistics();
+        displayOrders(allOrders);
+        setupOrdersPagination();
+        
+        // Проверяем лимит заявок
+        checkOrderLimit();
+        
+    } catch (error) {
+        console.error('Ошибка загрузки заявок:', error);
+        
+        // Используем демо-данные при ошибке
+        if (!isDemoMode) {
+            Utils.showNotification('Используются демо-данные', 'warning');
+            isDemoMode = true;
+            allOrders = demoOrders;
+            updateStatistics();
+            displayOrders(allOrders);
+            setupOrdersPagination();
+            checkOrderLimit();
+        } else {
+            Utils.showNotification('Не удалось загрузить заявки', 'error');
+            
+            const tableBody = document.getElementById('ordersTableBody');
+            if (tableBody) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="9" class="text-center text-danger">
+                            <i class="bi bi-exclamation-triangle"></i> Ошибка загрузки данных
+                            <button class="btn btn-sm btn-outline-primary ms-2" onclick="location.reload()">
+                                Попробовать снова
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+    }
+}
+
+// Обновляем функции editOrder, deleteOrder, saveOrderChanges для демо-режима:
+
+async function deleteOrder(orderId, modal) {
+    try {
+        if (isDemoMode) {
+            // Демо-удаление
+            allOrders = allOrders.filter(order => order.id != orderId);
+            Utils.showNotification('Демо-заявка удалена', 'success');
+            modal.hide();
+            updateStatistics();
+            displayOrders(allOrders);
+            setupOrdersPagination();
+            checkOrderLimit();
+        } else {
+            // Реальное удаление
+            await API.deleteOrder(orderId);
+            Utils.showNotification('Заявка успешно удалена', 'success');
+            modal.hide();
+            await loadOrders();
+        }
+    } catch (error) {
+        console.error('Ошибка удаления заявки:', error);
+        Utils.showNotification(`Ошибка удаления: ${error.message}`, 'danger');
+    }
+}
+
+async function saveOrderChanges(event) {
+    event.preventDefault();
+    
+    try {
+        const orderId = document.getElementById('editId').value;
+        
+        const updatedData = {
+            date_start: document.getElementById('editDate').value,
+            time_start: document.getElementById('editTime').value,
+            persons: parseInt(document.getElementById('editPersons').value),
+            early_registration: document.getElementById('editEarlyRegistration').checked,
+            group_enrollment: document.getElementById('editGroupEnrollment').checked,
+            intensive_course: document.getElementById('editIntensiveCourse').checked,
+            supplementary: document.getElementById('editSupplementary').checked,
+            personalized: document.getElementById('editPersonalized').checked,
+            excursions: document.getElementById('editExcursions').checked,
+            assessment: document.getElementById('editAssessment').checked,
+            interactive: document.getElementById('editInteractive').checked
+        };
+        
+        if (isDemoMode) {
+            // Демо-обновление
+            const index = allOrders.findIndex(o => o.id == orderId);
+            if (index >= 0) {
+                allOrders[index] = { ...allOrders[index], ...updatedData };
+                // Пересчитываем цену для демо
+                allOrders[index].price = calculateDemoPrice(allOrders[index]);
+                Utils.showNotification('Демо-заявка обновлена', 'success');
+                
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                modal.hide();
+                
+                updateStatistics();
+                displayOrders(allOrders);
+                setupOrdersPagination();
+            }
+        } else {
+            // Реальное обновление
+            await API.updateOrder(orderId, updatedData);
+            Utils.showNotification('Заявка успешно обновлена', 'success');
+            
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+            modal.hide();
+            
+            await loadOrders();
+        }
+        
+    } catch (error) {
+        console.error('Ошибка обновления заявки:', error);
+        Utils.showNotification(`Ошибка обновления: ${error.message}`, 'danger');
+    }
+}
+
+// Вспомогательная функция для расчета цены в демо-режиме
+function calculateDemoPrice(order) {
+    let price = 500; // Базовая цена
+    
+    if (order.persons > 1) price *= order.persons;
+    if (order.early_registration) price *= 0.9;
+    if (order.group_enrollment && order.persons >= 5) price *= 0.85;
+    if (order.intensive_course) price *= 1.2;
+    if (order.supplementary) price += 2000 * order.persons;
+    if (order.personalized) price += 1500;
+    if (order.excursions) price *= 1.25;
+    if (order.assessment) price += 300;
+    if (order.interactive) price *= 1.5;
+    
+    return Math.round(price);
+}
 
 //инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
