@@ -1,33 +1,35 @@
-//глобальные переменные
+'use strict';
+
+// Глобальные переменные
 let allCourses = [];
 let allTutors = [];
 let currentPage = 1;
-const itemsPerPage = 5; //по требованию: максимум 5 записей на страницу
+const itemsPerPage = 5;
 
-//инициализация при загрузке страницы
+// Инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Страница загружена');
     
-    //автоматически сохраняем API Key при первой загрузке
+    // Автоматически сохраняем API Key при первой загрузке
     if (!Auth.isAuthenticated()) {
         Auth.saveApiKey(API_KEY);
         Utils.showNotification('API Key автоматически сохранен', 'success');
     }
     
-    //загружаем курсы
+    // Загружаем курсы
     await loadCourses();
     
-    //загружаем репетиторы
+    // Загружаем репетиторы
     await loadTutors();
     
-    //инициализируем обработчики
+    // Инициализируем обработчики
     initEventHandlers();
     
     // Инициализируем модальное окно заказа
     initOrderModal();
 });
 
-//загрузка курсов
+// Загрузка курсов
 async function loadCourses() {
     try {
         const coursesContainer = document.getElementById('coursesContainer');
@@ -63,7 +65,7 @@ async function loadCourses() {
     }
 }
 
-//отображение курсов
+// Отображение курсов
 function displayCourses(courses) {
     const container = document.getElementById('coursesContainer');
     if (!container) return;
@@ -77,7 +79,7 @@ function displayCourses(courses) {
         return;
     }
     
-    //пагинация
+    // Пагинация
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedCourses = courses.slice(startIndex, endIndex);
@@ -107,7 +109,7 @@ function displayCourses(courses) {
     `).join('');
 }
 
-//пагинация курсов
+// Пагинация курсов
 function setupCoursesPagination() {
     const pagination = document.getElementById('coursesPagination');
     if (!pagination) return;
@@ -152,7 +154,7 @@ function changePage(page) {
     window.scrollTo({ top: document.getElementById('courses').offsetTop, behavior: 'smooth' });
 }
 
-//загрузка репетиторов
+// Загрузка репетиторов
 async function loadTutors() {
     try {
         const tutorsContainer = document.getElementById('tutorsContainer');
@@ -187,7 +189,7 @@ async function loadTutors() {
     }
 }
 
-//отображение репетиторов
+// Отображение репетиторов
 function displayTutors(tutors) {
     const container = document.getElementById('tutorsContainer');
     if (!container) return;
@@ -232,14 +234,14 @@ function displayTutors(tutors) {
     `).join('');
 }
 
-//фильтрация репетиторов
+// Фильтрация репетиторов
 function filterTutors() {
     const qualification = document.getElementById('tutorQualification')?.value;
     const experience = parseInt(document.getElementById('tutorExperience')?.value) || 0;
     
     let filtered = allTutors;
     
-    //фильтр по языкам
+    // Фильтр по языкам
     if (qualification && qualification !== 'all') {
         filtered = filtered.filter(tutor => 
             tutor.languages_offered?.some(lang => 
@@ -248,7 +250,7 @@ function filterTutors() {
         );
     }
     
-    //фильтр по опыту
+    // Фильтр по опыту
     if (experience > 0) {
         filtered = filtered.filter(tutor => tutor.work_experience >= experience);
     }
@@ -256,7 +258,7 @@ function filterTutors() {
     displayTutors(filtered);
 }
 
-//подать заявку на курс
+// Подать заявку на курс
 async function applyForCourse(courseId) {
     try {
         const course = allCourses.find(c => c.id === courseId);
@@ -267,34 +269,41 @@ async function applyForCourse(courseId) {
         
         console.log('Выбран курс:', course);
         
-        //проверяем авторизацию
+        // Проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
             return;
         }
         
-        //сохраняем выбранный курс
+        // Сохраняем выбранный курс
         sessionStorage.setItem('selectedCourse', JSON.stringify(course));
         sessionStorage.setItem('applicationType', 'course');
         
-        //заполняем информацию о курсе
+        // Заполняем информацию о курсе
         document.getElementById('orderCourseName').textContent = course.name;
         document.getElementById('orderTeacher').textContent = course.teacher;
         document.getElementById('orderLevel').textContent = course.level;
         document.getElementById('orderDuration').textContent = `${course.total_length} недель`;
         document.getElementById('basePricePerHour').textContent = Utils.formatPrice(course.course_fee_per_hour);
         
-        //скрываем блок репетитора, показываем блок курса
+        // Скрываем блок репетитора, показываем блок курса
         const courseInfo = document.getElementById('courseInfo');
         const tutorInfo = document.getElementById('tutorInfo');
         if (courseInfo) courseInfo.style.display = 'block';
         if (tutorInfo) tutorInfo.style.display = 'none';
         
-        //сбрасываем форму
+        // Сбрасываем форму
         resetOrderForm();
         
-        //показываем модальное окно
-        const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+        // Показываем модальное окно
+        const modalElement = document.getElementById('orderModal');
+        if (!modalElement) {
+            console.error('Модальное окно #orderModal не найдено');
+            Utils.showNotification('Ошибка: форма заявки не найдена', 'danger');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
     } catch (error) {
@@ -303,7 +312,7 @@ async function applyForCourse(courseId) {
     }
 }
 
-//подать заявку к репетитору
+// Подать заявку к репетитору
 async function applyForTutor(tutorId) {
     try {
         const tutor = allTutors.find(t => t.id === tutorId);
@@ -314,33 +323,40 @@ async function applyForTutor(tutorId) {
         
         console.log('Выбран репетитор:', tutor);
         
-        //проверяем авторизацию
+        // Проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
             return;
         }
         
-        //сохраняем выбранного репетитора
+        // Сохраняем выбранного репетитора
         sessionStorage.setItem('selectedTutor', JSON.stringify(tutor));
         sessionStorage.setItem('applicationType', 'tutor');
         
-        //заполняем информацию о репетиторе
+        // Заполняем информацию о репетиторе
         document.getElementById('orderTutorName').textContent = tutor.name;
         document.getElementById('orderTutorExperience').textContent = `${tutor.work_experience} лет`;
         document.getElementById('orderTutorLanguages').textContent = (tutor.languages_offered || []).join(', ');
         document.getElementById('tutorPricePerHour').textContent = Utils.formatPrice(tutor.price_per_hour);
         
-        //скрываем блок курса, показываем блок репетитора
+        // Скрываем блок курса, показываем блок репетитора
         const courseInfo = document.getElementById('courseInfo');
         const tutorInfo = document.getElementById('tutorInfo');
         if (courseInfo) courseInfo.style.display = 'none';
         if (tutorInfo) tutorInfo.style.display = 'block';
         
-        //сбрасываем форму
+        // Сбрасываем форму
         resetOrderForm();
         
-        //показываем модальное окно
-        const modal = new bootstrap.Modal(document.getElementById('orderModal'));
+        // Показываем модальное окно
+        const modalElement = document.getElementById('orderModal');
+        if (!modalElement) {
+            console.error('Модальное окно #orderModal не найдено');
+            Utils.showNotification('Ошибка: форма заявки не найдена', 'danger');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
     } catch (error) {
@@ -349,14 +365,14 @@ async function applyForTutor(tutorId) {
     }
 }
 
-//инициализация модального окна заказа
+// Инициализация модального окна заказа
 function initOrderModal() {
     const orderForm = document.getElementById('orderForm');
     if (!orderForm) return;
     
     orderForm.addEventListener('submit', submitOrder);
     
-    //обработчики изменений для пересчета стоимости
+    // Обработчики изменений для пересчета стоимости
     ['#orderDate', '#orderTime', '#persons', '#duration'].forEach(id => {
         const element = document.querySelector(id);
         if (element) {
@@ -364,12 +380,12 @@ function initOrderModal() {
         }
     });
     
-    //обработчики для чекбоксов
+    // Обработчики для чекбоксов
     document.querySelectorAll('.form-check-input').forEach(checkbox => {
         checkbox.addEventListener('change', calculateTotalPrice);
     });
     
-    //устанавливаем минимальную дату на сегодня
+    // Устанавливаем минимальную дату на сегодня
     const today = new Date().toISOString().split('T')[0];
     const orderDateInput = document.getElementById('orderDate');
     if (orderDateInput) {
@@ -377,13 +393,13 @@ function initOrderModal() {
     }
 }
 
-//сброс формы заказа
+// Сброс формы заказа
 function resetOrderForm() {
     const form = document.getElementById('orderForm');
     if (form) {
         form.reset();
         
-        //устанавливаем минимальную дату на сегодня
+        // Устанавливаем минимальную дату на сегодня
         const today = new Date().toISOString().split('T')[0];
         const orderDateInput = document.getElementById('orderDate');
         if (orderDateInput) {
@@ -391,7 +407,7 @@ function resetOrderForm() {
             orderDateInput.min = today;
         }
         
-        //устанавливаем стандартное время
+        // Устанавливаем стандартное время
         const orderTimeInput = document.getElementById('orderTime');
         if (orderTimeInput) {
             orderTimeInput.value = '10:00';
@@ -401,7 +417,7 @@ function resetOrderForm() {
     calculateTotalPrice();
 }
 
-//расчет общей стоимости (использует единую функцию из Utils)
+// Расчет общей стоимости
 function calculateTotalPrice() {
     const applicationType = sessionStorage.getItem('applicationType');
     
@@ -471,7 +487,7 @@ function calculateTotalPrice() {
     }
 }
 
-//отправка заявки
+// Отправка заявки
 async function submitOrder(event) {
     event.preventDefault();
     
@@ -528,16 +544,16 @@ async function submitOrder(event) {
         
         console.log('Отправка заявки:', formData);
         
-        //отправляем заявку
+        // Отправляем заявку
         const result = await API.createOrder(formData);
         
         Utils.showNotification('Заявка успешно создана!', 'success');
         
-        //закрываем модальное окно
+        // Закрываем модальное окно
         const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
         modal.hide();
         
-        //перенаправляем в личный кабинет
+        // Перенаправляем в личный кабинет
         setTimeout(() => {
             window.location.href = 'cabinet.html';
         }, 1500);
@@ -548,12 +564,12 @@ async function submitOrder(event) {
     }
 }
 
-//показать детали курса
+// Показать детали курса
 async function showCourseDetails(courseId) {
     try {
         const course = await API.getCourse(courseId);
         
-        //создаем модальное окно для деталей
+        // Создаем модальное окно для деталей
         const modalHTML = `
             <div class="modal fade" id="courseDetailModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -603,15 +619,21 @@ async function showCourseDetails(courseId) {
             </div>
         `;
         
-        //удаляем старую модалку если есть
+        // Удаляем старую модалку если есть
         const oldModal = document.getElementById('courseDetailModal');
         if (oldModal) oldModal.remove();
         
-        //добавляем новую модалку
+        // Добавляем новую модалку
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        //показываем модалку
-        const modal = new bootstrap.Modal(document.getElementById('courseDetailModal'));
+        // Показываем модалку
+        const modalElement = document.getElementById('courseDetailModal');
+        if (!modalElement) {
+            console.error('Модальное окно courseDetailModal не создано');
+            return;
+        }
+        
+        const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
     } catch (error) {
@@ -620,9 +642,9 @@ async function showCourseDetails(courseId) {
     }
 }
 
-//инициализация обработчиков событий
+// Инициализация обработчиков событий
 function initEventHandlers() {
-    //поиск курсов
+    // Поиск курсов
     const searchBtn = document.querySelector('button[onclick*="searchCourses"]');
     if (searchBtn) {
         searchBtn.onclick = searchCourses;
@@ -640,7 +662,7 @@ function initEventHandlers() {
         courseLevelSelect.addEventListener('change', searchCourses);
     }
     
-    //фильтрация репетиторов
+    // Фильтрация репетиторов
     const tutorQualification = document.getElementById('tutorQualification');
     const tutorExperience = document.getElementById('tutorExperience');
     
@@ -653,7 +675,7 @@ function initEventHandlers() {
     }
 }
 
-//поиск курсов
+// Поиск курсов
 function searchCourses() {
     const nameInput = document.getElementById('courseNameInput')?.value.toLowerCase() || '';
     const levelSelect = document.getElementById('courseLevelSelect')?.value || '';
@@ -677,7 +699,7 @@ function searchCourses() {
     setupCoursesPagination();
 }
 
-//глобальные функции
+// Глобальные функции
 window.searchCourses = searchCourses;
 window.filterTutors = filterTutors;
 window.applyForCourse = applyForCourse;
