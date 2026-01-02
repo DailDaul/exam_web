@@ -151,10 +151,17 @@ const Utils = {
         }, 5000);
     },
     
-    //расчет стоимости по формуле из задания
+    //расчет стоимости (единая функция для курсов и репетиторов)
     calculateCoursePrice(course, selectedDate, selectedTime, persons, options) {
-        let totalHours = course.week_length * course.total_length;
-        let basePrice = course.course_fee_per_hour * totalHours;
+        //для репетиторов используем price_per_hour
+        const isTutor = course.price_per_hour !== undefined;
+        let basePricePerHour = isTutor ? course.price_per_hour : course.course_fee_per_hour;
+        let totalHours = isTutor ? 1 : (course.week_length || 0) * (course.total_length || 0);
+        
+        if (!basePricePerHour) basePricePerHour = 0;
+        if (!totalHours) totalHours = 1;
+        
+        let basePrice = basePricePerHour * totalHours;
         
         //проверяем выходные/праздники
         const date = new Date(selectedDate);
@@ -163,7 +170,7 @@ const Utils = {
         const weekendMultiplier = isWeekend ? 1.5 : 1;
         
         //утренняя доплата (9:00-12:00)
-        const hour = parseInt(selectedTime.split(':')[0]);
+        const hour = selectedTime ? parseInt(selectedTime.split(':')[0]) : 0;
         let morningSurcharge = (hour >= 9 && hour < 12) ? 400 : 0;
         
         //вечерняя доплата (18:00-20:00)
@@ -177,7 +184,7 @@ const Utils = {
         if (options.group_enrollment && persons >= 5) total *= 0.85; // -15%
         if (options.intensive_course) total *= 1.2; // +20%
         if (options.supplementary) total += 2000 * persons;
-        if (options.personalized) total += 1500 * course.total_length;
+        if (options.personalized && !isTutor) total += 1500 * (course.total_length || 0);
         if (options.excursions) total *= 1.25; // +25%
         if (options.assessment) total += 300;
         if (options.interactive) total *= 1.5; // +50%
