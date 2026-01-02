@@ -1,28 +1,12 @@
+// api.js - ТОЛЬКО API, без демо-данных
+
 const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
 const API_KEY = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
 
-//cписок CORS-прокси для обхода ограничений
-const CORS_PROXIES = [
-    'https://api.allorigins.win/raw?url=', 
-    'https://corsproxy.io/?',               
-    'https://thingproxy.freeboard.io/fetch/' 
-];
-
-//объект для работы с API
+// Объект для работы с API
 const API = {
-    //общая функция для выполнения запросов
+    // Общая функция для выполнения запросов
     async request(endpoint, method = 'GET', data = null) {
-        //если мы на локальном сервере (HTTP), используем прямой запрос
-        if (window.location.protocol === 'http:' || API_BASE_URL.startsWith('https:')) {
-            return await this.directRequest(endpoint, method, data);
-        }
-        
-        //если на HTTPS, используем прокси
-        return await this.proxyRequest(endpoint, method, data);
-    },
-    
-    //прямой запрос (для HTTP)
-    async directRequest(endpoint, method = 'GET', data = null) {
         const url = new URL(`${API_BASE_URL}${endpoint}`);
         url.searchParams.append('api_key', API_KEY);
         
@@ -49,99 +33,60 @@ const API = {
             
             return await response.json();
         } catch (error) {
-            console.error('Direct API Error:', error);
+            console.error('API Error:', error);
             throw error;
         }
     },
     
-    //запрос через прокси (для HTTPS)
-    async proxyRequest(endpoint, method = 'GET', data = null) {
-        const url = new URL(`${API_BASE_URL}${endpoint}`);
-        url.searchParams.append('api_key', API_KEY);
-        
-        const targetUrl = url.toString();
-        let lastError = null;
-        
-        //пробуем разные прокси по очереди
-        for (const proxy of CORS_PROXIES) {
-            const proxyUrl = proxy + encodeURIComponent(targetUrl);
-            
-            const options = {
-                method,
-                headers: {
-                    'Accept': 'application/json',
-                }
-            };
-            
-            if (data && (method === 'POST' || method === 'PUT')) {
-                options.headers['Content-Type'] = 'application/json';
-                options.body = JSON.stringify(data);
-            }
-            
-            try {
-                console.log(`Пробуем прокси: ${proxyUrl}`);
-                const response = await fetch(proxyUrl, options);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error ${response.status} from proxy`);
-                }
-                
-                const result = await response.json();
-                console.log('Успешно через прокси:', proxy);
-                return result;
-                
-            } catch (error) {
-                console.warn(`Прокси ${proxy} не сработал:`, error.message);
-                lastError = error;
-                continue; // Пробуем следующий прокси
-            }
-        }
-        
-        //если все прокси не сработали
-        throw new Error(`Все прокси не сработали. Последняя ошибка: ${lastError?.message}`);
-    },
-    
-    //методы API
+    // Получить все курсы
     async getCourses() {
         return await this.request('/api/courses');
     },
     
+    // Получить курс по ID
     async getCourse(id) {
         return await this.request(`/api/courses/${id}`);
     },
     
+    // Получить всех репетиторов
     async getTutors() {
         return await this.request('/api/tutors');
     },
     
+    // Получить репетитора по ID
     async getTutor(id) {
         return await this.request(`/api/tutors/${id}`);
     },
     
+    // Получить все заявки пользователя
     async getOrders() {
         return await this.request('/api/orders');
     },
     
+    // Получить заявку по ID
     async getOrder(id) {
         return await this.request(`/api/orders/${id}`);
     },
     
+    // Создать новую заявку
     async createOrder(orderData) {
         return await this.request('/api/orders', 'POST', orderData);
     },
     
+    // Обновить заявку
     async updateOrder(id, orderData) {
         return await this.request(`/api/orders/${id}`, 'PUT', orderData);
     },
     
+    // Удалить заявку
     async deleteOrder(id) {
         return await this.request(`/api/orders/${id}`, 'DELETE');
     }
 };
 
-//утилиты для работы с данными
+// Утилиты для работы с данными
 const Utils = {
-    //форматирование даты
+    // Форматирование даты
     formatDate(dateString) {
         if (!dateString) return '-';
         try {
@@ -152,19 +97,19 @@ const Utils = {
         }
     },
     
-    //форматирование времени
+    // Форматирование времени
     formatTime(timeString) {
         if (!timeString) return '-';
         return timeString.substring(0, 5);
     },
     
-    //форматирование суммы
+    // Форматирование суммы
     formatPrice(price) {
         if (!price) return '0';
         return new Intl.NumberFormat('ru-RU').format(price);
     },
     
-    //получить название статуса заявки
+    // Получить название статуса заявки
     getStatusText(status) {
         const statuses = {
             'pending': 'Ожидает',
@@ -175,7 +120,7 @@ const Utils = {
         return statuses[status] || status || 'Ожидает';
     },
     
-    //получить класс для статуса
+    // Получить класс для статуса
     getStatusClass(status) {
         const classes = {
             'pending': 'warning',
@@ -186,7 +131,7 @@ const Utils = {
         return classes[status] || 'secondary';
     },
     
-    //показать уведомление
+    // Показать уведомление
     showNotification(message, type = 'info') {
         const notificationArea = document.getElementById('notification-area');
         if (!notificationArea) return;
@@ -200,102 +145,44 @@ const Utils = {
         
         notificationArea.appendChild(alert);
         
-        //автоматическое скрытие через 5 секунд
+        // Автоматическое скрытие через 5 секунд
         setTimeout(() => {
             if (alert.parentNode) {
                 alert.classList.remove('show');
                 setTimeout(() => alert.remove(), 150);
             }
         }, 5000);
-    },
-    
-    //генерация демо-данных при отсутствии доступа к API
-    generateDemoData(type) {
-        if (type === 'courses') {
-            return [
-                {
-                    id: 1,
-                    name: "Введение в русский язык",
-                    description: "Курс для начинающих изучать русский язык.",
-                    teacher: "Виктор Сергеевич",
-                    level: "Начальный",
-                    total_length: 8,
-                    week_length: 2,
-                    course_fee_per_hour: 200,
-                    start_dates: ["2025-02-01T09:00:00", "2025-02-01T12:00:00"]
-                },
-                {
-                    id: 2,
-                    name: "Английский для продвинутых",
-                    description: "Углубленное изучение грамматики английского языка.",
-                    teacher: "Анна Ивановна",
-                    level: "Продвинутый",
-                    total_length: 12,
-                    week_length: 3,
-                    course_fee_per_hour: 300,
-                    start_dates: ["2025-02-15T10:00:00"]
-                }
-            ];
-        } else if (type === 'tutors') {
-            return [
-                {
-                    id: 1,
-                    name: "Ирина Петровна",
-                    work_experience: 5,
-                    languages_spoken: ["Английский", "Испанский", "Русский"],
-                    languages_offered: ["Русский", "Английский"],
-                    language_level: "Продвинутый",
-                    price_per_hour: 500
-                },
-                {
-                    id: 2,
-                    name: "Александр Дмитриевич",
-                    work_experience: 8,
-                    languages_spoken: ["Английский", "Немецкий", "Французский"],
-                    languages_offered: ["Английский", "Немецкий"],
-                    language_level: "Эксперт",
-                    price_per_hour: 700
-                }
-            ];
-        }
-        return [];
     }
 };
 
-//модуль аутентификации
+// Модуль аутентификации
 const Auth = {
-    //проверить, авторизован ли пользователь
+    // Проверить, авторизован ли пользователь
     isAuthenticated() {
         const savedKey = localStorage.getItem('api_key');
-        return savedKey === API_KEY || savedKey === 'demo'; // Демо-режим
+        return savedKey === API_KEY;
     },
     
-    //сохранить ключ
+    // Сохранить ключ
     saveApiKey(key) {
         localStorage.setItem('api_key', key);
         localStorage.setItem('api_key_saved', 'true');
     },
     
-    //получить сохраненный ключ
+    // Получить сохраненный ключ
     getApiKey() {
         return localStorage.getItem('api_key');
     },
     
-    //очистить ключ (выход)
+    // Очистить ключ (выход)
     clearApiKey() {
         localStorage.removeItem('api_key');
         localStorage.removeItem('api_key_saved');
     },
     
-    //включить демо-режим
-    enableDemoMode() {
-        this.saveApiKey('demo');
-        Utils.showNotification('Включен демо-режим. Используются локальные данные.', 'info');
-    },
-    
-    //показать модальное окно для ввода API ключа
+    // Показать модальное окно для ввода API ключа
     showModal() {
-        //создаем модальное окно, если его нет
+        // Создаем модальное окно, если его нет
         let modal = document.getElementById('apiKeyModal');
         if (!modal) {
             modal = document.createElement('div');
@@ -321,13 +208,6 @@ const Auth = {
                                     Сохранить ключ на этом устройстве
                                 </label>
                             </div>
-                            <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                <strong>Проблемы с доступом к API?</strong>
-                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="Auth.enableDemoMode(); const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal')); modal.hide();">
-                                    Включить демо-режим
-                                </button>
-                            </div>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
@@ -338,7 +218,7 @@ const Auth = {
             `;
             document.body.appendChild(modal);
             
-            //обработчик сохранения ключа
+            // Обработчик сохранения ключа
             document.getElementById('saveApiKeyBtn').addEventListener('click', () => {
                 const saveToStorage = document.getElementById('saveApiKeyCheck').checked;
                 if (saveToStorage) {
@@ -350,13 +230,13 @@ const Auth = {
             });
         }
         
-        //показываем модальное окно
+        // Показываем модальное окно
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
     }
 };
 
-//экспорт для глобального использования
+// Экспорт для глобального использования
 window.API = API;
 window.Utils = Utils;
 window.Auth = Auth;
