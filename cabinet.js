@@ -1,3 +1,5 @@
+'use strict';
+
 //глобальные переменные
 let allOrders = [];
 let currentOrderPage = 1;
