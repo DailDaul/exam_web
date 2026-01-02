@@ -41,11 +41,6 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* стили для таблиц */
-.table-hover tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
-}
-
 /* стили для кнопок */
 .btn-group-sm > .btn {
     padding: 0.25rem 0.5rem;
@@ -79,11 +74,6 @@ body {
     font-weight: bold;
 }
 
-/* анимация для строк таблицы */
-#ordersTable tbody tr {
-    transition: background-color 0.2s;
-}
-
 /* стили для модальных окон */
 .modal-body h6 {
     color: #495057;
@@ -92,24 +82,12 @@ body {
     margin-bottom: 1rem;
 }
 
-/* стили для опций в деталях заказа */
-#detailOptions .alert {
-    margin-bottom: 0.5rem;
-    padding: 0.5rem 1rem;
-}
-
 /* стили для аватаров */
 .avatar-placeholder {
     background: linear-gradient(135deg, #6c757d, #495057);
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-/* стили для бейджей */
-.badge {
-    font-size: 0.8em;
-    padding: 0.35em 0.65em;
 }
 
 /* стили для футера */
