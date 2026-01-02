@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://exam-api-courses.std-900.ist.mospolytech.ru/';
+const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
 const API_KEY = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
 
 //объект для работы с API
@@ -8,11 +8,20 @@ const API = {
         const url = new URL(`${API_BASE_URL}${endpoint}`);
         url.searchParams.append('api_key', API_KEY);
         
+        // используем прокси для обхода CORS при загрузке с HTTPS
+        let fetchUrl = url.toString();
+        
+        // Если страница загружена по HTTPS, используем прокси
+        if (window.location.protocol === 'https:' && !API_BASE_URL.startsWith('https:')) {
+            fetchUrl = `https://cors-anywhere.herokuapp.com/${fetchUrl}`;
+        }
+        
         const options = {
             method,
             headers: {
                 'Accept': 'application/json',
-            }
+            },
+            mode: 'cors' //явно указываем режим CORS
         };
         
         if (data && (method === 'POST' || method === 'PUT')) {
@@ -21,7 +30,7 @@ const API = {
         }
         
         try {
-            const response = await fetch(url, options);
+            const response = await fetch(fetchUrl, options);
             
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
@@ -31,51 +40,57 @@ const API = {
             return await response.json();
         } catch (error) {
             console.error('API Error:', error);
+            
+            //пробуем альтернативный прокси, если первый не сработал
+            if (error.message.includes('Failed to fetch') && !fetchUrl.includes('allorigins')) {
+                console.log('Пробуем альтернативный прокси...');
+                const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url.toString())}`;
+                try {
+                    const altResponse = await fetch(altUrl, { method: 'GET' });
+                    if (altResponse.ok) {
+                        return await altResponse.json();
+                    }
+                } catch (altError) {
+                    console.error('Альтернативный прокси тоже не сработал:', altError);
+                }
+            }
+            
             throw error;
         }
     },
     
-    //получить все курсы
     async getCourses() {
         return await this.request('/api/courses');
     },
     
-    //получить курс по ID
     async getCourse(id) {
         return await this.request(`/api/courses/${id}`);
     },
     
-    //получить всех репетиторов
     async getTutors() {
         return await this.request('/api/tutors');
     },
     
-    //получить репетитора по ID
     async getTutor(id) {
         return await this.request(`/api/tutors/${id}`);
     },
     
-    //получить все заявки пользователя
     async getOrders() {
         return await this.request('/api/orders');
     },
     
-    //получить заявку по ID
     async getOrder(id) {
         return await this.request(`/api/orders/${id}`);
     },
     
-    //создать новую заявку
     async createOrder(orderData) {
         return await this.request('/api/orders', 'POST', orderData);
     },
     
-    //обновить заявку
     async updateOrder(id, orderData) {
         return await this.request(`/api/orders/${id}`, 'PUT', orderData);
     },
     
-    //удалить заявку
     async deleteOrder(id) {
         return await this.request(`/api/orders/${id}`, 'DELETE');
     }
