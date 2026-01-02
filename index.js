@@ -172,3 +172,44 @@ async function submitOrder(event) {
         Utils.showNotification(`Ошибка: ${error.message}`, 'danger');
     }
 }
+
+function updateDemoModeUI() {
+    const isDemo = Auth.getApiKey() === 'demo';
+    const icon = document.getElementById('demoModeIcon');
+    const text = document.getElementById('demoModeText');
+    
+    if (icon && text) {
+        if (isDemo) {
+            icon.className = 'bi bi-toggle-on text-success';
+            text.textContent = 'Демо-режим ВКЛ';
+        } else {
+            icon.className = 'bi bi-toggle-off';
+            text.textContent = 'Демо-режим';
+        }
+    }
+}
+
+// Инициализация при загрузке
+document.addEventListener('DOMContentLoaded', function() {
+    updateDemoModeUI();
+    
+    // Обработчик переключения режима
+    const toggleBtn = document.getElementById('toggleDemoMode');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            if (Auth.getApiKey() === 'demo') {
+                // Выключить демо-режим
+                Auth.clearApiKey();
+                Utils.showNotification('Демо-режим выключен', 'info');
+            } else {
+                // Включить демо-режим
+                Auth.enableDemoMode();
+            }
+            
+            updateDemoModeUI();
+            setTimeout(() => location.reload(), 1000);
+        });
+    }
+});
