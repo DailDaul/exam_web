@@ -1,6 +1,6 @@
 // api.js - ТОЛЬКО API, без демо-данных
 
-const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
+const API_BASE_URL = 'https://exam-api-courses.std-900.ist.mospolytech.ru';
 const API_KEY = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
 
 // Объект для работы с API
