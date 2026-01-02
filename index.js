@@ -17,11 +17,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     //загружаем курсы
     await loadCourses();
     
-    //загружаем репетиторов
+    //загружаем репетиторы
     await loadTutors();
     
     //инициализируем обработчики
     initEventHandlers();
+    
+    // Инициализируем модальное окно заказа
+    initOrderModal();
 });
 
 //загрузка курсов
@@ -236,7 +239,7 @@ function filterTutors() {
     
     let filtered = allTutors;
     
-    //фильтр по языкам (используем languages_offered)
+    //фильтр по языкам
     if (qualification && qualification !== 'all') {
         filtered = filtered.filter(tutor => 
             tutor.languages_offered?.some(lang => 
@@ -267,16 +270,12 @@ async function applyForCourse(courseId) {
         //проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
-            Auth.showModal();
             return;
         }
         
         //сохраняем выбранный курс
         sessionStorage.setItem('selectedCourse', JSON.stringify(course));
         sessionStorage.setItem('applicationType', 'course');
-        
-        //создаем модальное окно, если его нет
-        createOrderModal();
         
         //заполняем информацию о курсе
         document.getElementById('orderCourseName').textContent = course.name;
@@ -285,17 +284,11 @@ async function applyForCourse(courseId) {
         document.getElementById('orderDuration').textContent = `${course.total_length} недель`;
         document.getElementById('basePricePerHour').textContent = Utils.formatPrice(course.course_fee_per_hour);
         
-        //заполняем даты начала
-        const startDateSelect = document.getElementById('orderStartDate');
-        if (startDateSelect) {
-            startDateSelect.innerHTML = '<option value="">Выберите дату</option>';
-            course.start_dates.forEach(dateStr => {
-                const date = new Date(dateStr);
-                const dateValue = date.toISOString().split('T')[0];
-                const dateText = date.toLocaleDateString('ru-RU');
-                startDateSelect.innerHTML += `<option value="${dateValue}">${dateText}</option>`;
-            });
-        }
+        //скрываем блок репетитора, показываем блок курса
+        const courseInfo = document.getElementById('courseInfo');
+        const tutorInfo = document.getElementById('tutorInfo');
+        if (courseInfo) courseInfo.style.display = 'block';
+        if (tutorInfo) tutorInfo.style.display = 'none';
         
         //сбрасываем форму
         resetOrderForm();
@@ -324,16 +317,12 @@ async function applyForTutor(tutorId) {
         //проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
-            Auth.showModal();
             return;
         }
         
         //сохраняем выбранного репетитора
         sessionStorage.setItem('selectedTutor', JSON.stringify(tutor));
         sessionStorage.setItem('applicationType', 'tutor');
-        
-        //создаем модальное окно, если его нет
-        createOrderModal();
         
         //заполняем информацию о репетиторе
         document.getElementById('orderTutorName').textContent = tutor.name;
@@ -360,150 +349,6 @@ async function applyForTutor(tutorId) {
     }
 }
 
-//создание модального окна заказа (если его нет в HTML)
-function createOrderModal() {
-    if (document.getElementById('orderModal')) return;
-    
-    const modalHTML = `
-    <div class="modal fade" id="orderModal" tabindex="-1" aria-labelledby="orderModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="orderModalLabel">Оформление заявки</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Информация о курсе -->
-                    <div id="courseInfo" class="card bg-light mb-3">
-                        <div class="card-body">
-                            <h6>Информация о курсе</h6>
-                            <p><strong>Название:</strong> <span id="orderCourseName"></span></p>
-                            <p><strong>Преподаватель:</strong> <span id="orderTeacher"></span></p>
-                            <p><strong>Уровень:</strong> <span id="orderLevel"></span></p>
-                            <p><strong>Длительность:</strong> <span id="orderDuration"></span></p>
-                            <p><strong>Стоимость:</strong> <span id="basePricePerHour"></span> ₽/час</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Информация о репетиторе (скрыта по умолчанию) -->
-                    <div id="tutorInfo" class="card bg-light mb-3" style="display: none;">
-                        <div class="card-body">
-                            <h6>Информация о репетиторе</h6>
-                            <p><strong>Имя:</strong> <span id="orderTutorName"></span></p>
-                            <p><strong>Опыт:</strong> <span id="orderTutorExperience"></span></p>
-                            <p><strong>Языки:</strong> <span id="orderTutorLanguages"></span></p>
-                            <p><strong>Стоимость:</strong> <span id="tutorPricePerHour"></span> ₽/час</p>
-                        </div>
-                    </div>
-                    
-                    <!-- Форма заявки -->
-                    <form id="orderForm">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Дата начала *</label>
-                                <select class="form-select" id="orderStartDate" required>
-                                    <option value="">Выберите дату</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Время занятия *</label>
-                                <select class="form-select" id="orderTime" required disabled>
-                                    <option value="">Сначала выберите дату</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Количество человек (1-20) *</label>
-                            <input type="number" class="form-control" id="persons" min="1" max="20" value="1" required>
-                        </div>
-                        
-                        <h6 class="mt-4">Дополнительные опции</h6>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="earlyRegistration">
-                                    <label class="form-check-label" for="earlyRegistration">
-                                        Скидка за раннюю регистрацию (10%)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="groupEnrollment">
-                                    <label class="form-check-label" for="groupEnrollment">
-                                        Групповая скидка (15% от 5+ человек)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="intensiveCourse">
-                                    <label class="form-check-label" for="intensiveCourse">
-                                        Интенсивный курс (+20%)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="supplementary">
-                                    <label class="form-check-label" for="supplementary">
-                                        Доп. материалы (+2000 ₽ на человека)
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="personalized">
-                                    <label class="form-check-label" for="personalized">
-                                        Индивидуальные занятия (+1500 ₽/неделю)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="excursions">
-                                    <label class="form-check-label" for="excursions">
-                                        Культурные экскурсии (+25%)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="assessment">
-                                    <label class="form-check-label" for="assessment">
-                                        Оценка уровня (+300 ₽)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="interactive">
-                                    <label class="form-check-label" for="interactive">
-                                        Интерактивная платформа (+50%)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Итоговая стоимость -->
-                        <div class="card bg-primary text-white mt-4">
-                            <div class="card-body">
-                                <h5 class="card-title mb-0">
-                                    Итоговая стоимость: 
-                                    <span id="totalCost" class="display-6">0</span> ₽
-                                </h5>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info mt-3">
-                            <i class="bi bi-info-circle"></i> 
-                            Стоимость рассчитывается автоматически при изменении параметров.
-                        </div>
-                        
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                            <button type="submit" class="btn btn-primary">Отправить заявку</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    initOrderModal();
-}
-
 //инициализация модального окна заказа
 function initOrderModal() {
     const orderForm = document.getElementById('orderForm');
@@ -512,7 +357,7 @@ function initOrderModal() {
     orderForm.addEventListener('submit', submitOrder);
     
     //обработчики изменений для пересчета стоимости
-    ['#orderStartDate', '#orderTime', '#persons'].forEach(id => {
+    ['#orderDate', '#orderTime', '#persons', '#duration'].forEach(id => {
         const element = document.querySelector(id);
         if (element) {
             element.addEventListener('change', calculateTotalPrice);
@@ -524,149 +369,102 @@ function initOrderModal() {
         checkbox.addEventListener('change', calculateTotalPrice);
     });
     
-    //обработчик выбора даты
-    const startDateSelect = document.getElementById('orderStartDate');
-    if (startDateSelect) {
-        startDateSelect.addEventListener('change', function() {
-            const timeSelect = document.getElementById('orderTime');
-            if (timeSelect && this.value) {
-                updateTimeOptions(this.value);
-                timeSelect.disabled = false;
-            } else if (timeSelect) {
-                timeSelect.disabled = true;
-                timeSelect.innerHTML = '<option value="">Сначала выберите дату</option>';
-            }
-            calculateTotalPrice();
-        });
-    }
-}
-
-//обновление опций времени
-function updateTimeOptions(selectedDate) {
-    const applicationType = sessionStorage.getItem('applicationType');
-    const timeSelect = document.getElementById('orderTime');
-    
-    if (!timeSelect) return;
-    
-    timeSelect.innerHTML = '<option value="">Выберите время</option>';
-    
-    if (applicationType === 'course') {
-        const course = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-        const courseStartDates = course.start_dates || [];
-        
-        //фильтруем времена для выбранной даты
-        const timesForDate = courseStartDates
-            .filter(dateStr => dateStr.startsWith(selectedDate))
-            .map(dateStr => {
-                const date = new Date(dateStr);
-                return date.toTimeString().substring(0, 5); // HH:MM
-            });
-        
-        //убираем дубликаты
-        const uniqueTimes = [...new Set(timesForDate)];
-        
-        uniqueTimes.forEach(time => {
-            timeSelect.innerHTML += `<option value="${time}">${time}</option>`;
-        });
-    } else if (applicationType === 'tutor') {
-        //для репетиторов - стандартные времена
-        const times = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'];
-        times.forEach(time => {
-            timeSelect.innerHTML += `<option value="${time}">${time}</option>`;
-        });
+    //устанавливаем минимальную дату на сегодня
+    const today = new Date().toISOString().split('T')[0];
+    const orderDateInput = document.getElementById('orderDate');
+    if (orderDateInput) {
+        orderDateInput.min = today;
     }
 }
 
 //сброс формы заказа
 function resetOrderForm() {
     const form = document.getElementById('orderForm');
-    if (form) form.reset();
-    
-    //показываем/скрываем блоки в зависимости от типа заявки
-    const applicationType = sessionStorage.getItem('applicationType');
-    const courseInfo = document.getElementById('courseInfo');
-    const tutorInfo = document.getElementById('tutorInfo');
-    
-    if (courseInfo) courseInfo.style.display = applicationType === 'course' ? 'block' : 'none';
-    if (tutorInfo) tutorInfo.style.display = applicationType === 'tutor' ? 'block' : 'none';
-    
-    //сбрасываем селекты времени
-    const timeSelect = document.getElementById('orderTime');
-    if (timeSelect) {
-        timeSelect.innerHTML = '<option value="">Сначала выберите дату</option>';
-        timeSelect.disabled = true;
+    if (form) {
+        form.reset();
+        
+        //устанавливаем минимальную дату на сегодня
+        const today = new Date().toISOString().split('T')[0];
+        const orderDateInput = document.getElementById('orderDate');
+        if (orderDateInput) {
+            orderDateInput.value = today;
+            orderDateInput.min = today;
+        }
+        
+        //устанавливаем стандартное время
+        const orderTimeInput = document.getElementById('orderTime');
+        if (orderTimeInput) {
+            orderTimeInput.value = '10:00';
+        }
     }
     
     calculateTotalPrice();
 }
 
-//расчет общей стоимости
+//расчет общей стоимости (использует единую функцию из Utils)
 function calculateTotalPrice() {
     const applicationType = sessionStorage.getItem('applicationType');
-    let basePricePerHour = 0;
-    let totalHours = 1;
+    
+    if (!applicationType) {
+        document.getElementById('totalCost').textContent = '0';
+        return;
+    }
+    
+    let selectedData = null;
     
     if (applicationType === 'course') {
-        const course = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-        basePricePerHour = course.course_fee_per_hour || 0;
-        totalHours = (course.week_length || 2) * (course.total_length || 8);
+        selectedData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
     } else if (applicationType === 'tutor') {
-        const tutor = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
-        basePricePerHour = tutor.price_per_hour || 0;
-        //дяя репетитора продолжительность = 1 час (по умолчанию)
-        totalHours = 1;
+        selectedData = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
+    } else {
+        document.getElementById('totalCost').textContent = '0';
+        return;
     }
     
     const persons = parseInt(document.getElementById('persons')?.value) || 1;
-    const selectedDate = document.getElementById('orderStartDate')?.value;
+    const selectedDate = document.getElementById('orderDate')?.value;
     const selectedTime = document.getElementById('orderTime')?.value;
+    const duration = applicationType === 'tutor' ? parseInt(document.getElementById('duration')?.value) || 1 : 1;
     
-    let totalPrice = basePricePerHour * totalHours * persons;
+    // Собираем опции
+    const options = {
+        early_registration: document.getElementById('earlyRegistration')?.checked || false,
+        group_enrollment: document.getElementById('groupEnrollment')?.checked || false,
+        intensive_course: document.getElementById('intensiveCourse')?.checked || false,
+        supplementary: document.getElementById('supplementary')?.checked || false,
+        personalized: document.getElementById('personalized')?.checked || false,
+        excursions: document.getElementById('excursions')?.checked || false,
+        assessment: document.getElementById('assessment')?.checked || false,
+        interactive: document.getElementById('interactive')?.checked || false
+    };
     
-    //проверяем выходные/праздники
-    if (selectedDate) {
-        const date = new Date(selectedDate);
-        const dayOfWeek = date.getDay(); // 0-воскресенье, 6-суббота
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const weekendMultiplier = isWeekend ? 1.5 : 1;
-        totalPrice *= weekendMultiplier;
-    }
-    
-    //утренняя/вечерняя доплата
-    if (selectedTime) {
-        const hour = parseInt(selectedTime.split(':')[0]);
-        if (hour >= 9 && hour < 12) totalPrice += 400 * persons; // Утренняя доплата
-        if (hour >= 18 && hour < 20) totalPrice += 1000 * persons; // Вечерняя доплата
-    }
-    
-    //применяем скидки
-    const earlyReg = document.getElementById('earlyRegistration')?.checked;
-    const groupEnrollment = document.getElementById('groupEnrollment')?.checked;
-    
-    if (earlyReg) totalPrice *= 0.9; // 10% скидка
-    if (groupEnrollment && persons >= 5) totalPrice *= 0.85; // 15% скидка
-    
-    //добавляем дополнительные опции
-    const supplementary = document.getElementById('supplementary')?.checked;
-    const intensive = document.getElementById('intensiveCourse')?.checked;
-    const personalized = document.getElementById('personalized')?.checked;
-    const excursions = document.getElementById('excursions')?.checked;
-    const assessment = document.getElementById('assessment')?.checked;
-    const interactive = document.getElementById('interactive')?.checked;
-    
-    if (supplementary) totalPrice += 2000 * persons;
-    if (intensive) totalPrice *= 1.2;
+    let totalPrice = 0;
     
     if (applicationType === 'course') {
-        const course = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-        if (personalized) totalPrice += 1500 * (course.total_length || 8);
+        // Используем единую функцию расчета из Utils
+        totalPrice = Utils.calculateCoursePrice(
+            selectedData, 
+            selectedDate, 
+            selectedTime, 
+            persons, 
+            options
+        );
+    } else if (applicationType === 'tutor') {
+        // Для репетиторов корректируем общую длительность
+        const tutorWithDuration = { ...selectedData };
+        tutorWithDuration.week_length = duration;
+        tutorWithDuration.total_length = 1;
+        
+        totalPrice = Utils.calculateCoursePrice(
+            tutorWithDuration,
+            selectedDate,
+            selectedTime,
+            persons,
+            options
+        );
     }
     
-    if (excursions) totalPrice *= 1.25;
-    if (assessment) totalPrice += 300;
-    if (interactive) totalPrice *= 1.5;
-    
-    //отображаем итоговую стоимость
+    // Отображаем итоговую стоимость
     const totalCostElement = document.getElementById('totalCost');
     if (totalCostElement) {
         totalCostElement.textContent = Utils.formatPrice(Math.round(totalPrice));
@@ -679,13 +477,23 @@ async function submitOrder(event) {
     
     if (!Auth.isAuthenticated()) {
         Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
-        Auth.showModal();
         return;
     }
     
     try {
         const applicationType = sessionStorage.getItem('applicationType');
-        const selectedDate = document.getElementById('orderStartDate').value;
+        let selectedData = null;
+        
+        if (applicationType === 'course') {
+            selectedData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
+        } else if (applicationType === 'tutor') {
+            selectedData = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
+        } else {
+            Utils.showNotification('Не выбран курс или репетитор', 'warning');
+            return;
+        }
+        
+        const selectedDate = document.getElementById('orderDate').value;
         const selectedTime = document.getElementById('orderTime').value;
         const persons = parseInt(document.getElementById('persons').value) || 1;
         
@@ -694,10 +502,10 @@ async function submitOrder(event) {
             return;
         }
         
+        // Используем единый формат данных
         const formData = {
             date_start: selectedDate,
             time_start: selectedTime,
-            duration: 1, //для заявки передаем 1 час (реальная длительность для курса считается на сервере)
             persons: persons,
             early_registration: document.getElementById('earlyRegistration').checked,
             group_enrollment: document.getElementById('groupEnrollment').checked,
@@ -711,12 +519,10 @@ async function submitOrder(event) {
         };
         
         if (applicationType === 'course') {
-            const course = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-            formData.course_id = course.id;
+            formData.course_id = selectedData.id;
             formData.tutor_id = 0;
-        } else if (applicationType === 'tutor') {
-            const tutor = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
-            formData.tutor_id = tutor.id;
+        } else {
+            formData.tutor_id = selectedData.id;
             formData.course_id = 0;
         }
         
