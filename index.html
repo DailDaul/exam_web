@@ -35,9 +35,10 @@
                     <li class="nav-item"><a class="nav-link" href="#tutors">Репетиторы</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contacts">Контакты</a></li>
                     <li class="nav-item"><a class="nav-link" href="cabinet.html">Личный кабинет</a></li>
-                    <li class="nav-item" id="apiSettingsItem">
-                        <a class="nav-link" href="#" onclick="if(typeof Auth!=='undefined') Auth.showModal(); else alert('Модуль авторизации не загружен')">
-                            <i class="bi bi-key"></i> API
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="toggleDemoMode">
+                            <i class="bi bi-toggle-off" id="demoModeIcon"></i>
+                                <span id="demoModeText">Демо-режим</span>
                         </a>
                     </li>
                 </ul>
