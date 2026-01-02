@@ -1,27 +1,37 @@
 const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
 const API_KEY = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
 
+//cписок CORS-прокси для обхода ограничений
+const CORS_PROXIES = [
+    'https://api.allorigins.win/raw?url=', 
+    'https://corsproxy.io/?',               
+    'https://thingproxy.freeboard.io/fetch/' 
+];
+
 //объект для работы с API
 const API = {
     //общая функция для выполнения запросов
     async request(endpoint, method = 'GET', data = null) {
+        //если мы на локальном сервере (HTTP), используем прямой запрос
+        if (window.location.protocol === 'http:' || API_BASE_URL.startsWith('https:')) {
+            return await this.directRequest(endpoint, method, data);
+        }
+        
+        //если на HTTPS, используем прокси
+        return await this.proxyRequest(endpoint, method, data);
+    },
+    
+    //прямой запрос (для HTTP)
+    async directRequest(endpoint, method = 'GET', data = null) {
         const url = new URL(`${API_BASE_URL}${endpoint}`);
         url.searchParams.append('api_key', API_KEY);
-        
-        // используем прокси для обхода CORS при загрузке с HTTPS
-        let fetchUrl = url.toString();
-        
-        // Если страница загружена по HTTPS, используем прокси
-        if (window.location.protocol === 'https:' && !API_BASE_URL.startsWith('https:')) {
-            fetchUrl = `https://cors-anywhere.herokuapp.com/${fetchUrl}`;
-        }
         
         const options = {
             method,
             headers: {
                 'Accept': 'application/json',
             },
-            mode: 'cors' //явно указываем режим CORS
+            mode: 'cors'
         };
         
         if (data && (method === 'POST' || method === 'PUT')) {
@@ -30,7 +40,7 @@ const API = {
         }
         
         try {
-            const response = await fetch(fetchUrl, options);
+            const response = await fetch(url, options);
             
             if (!response.ok) {
                 const error = await response.json().catch(() => ({}));
@@ -39,26 +49,59 @@ const API = {
             
             return await response.json();
         } catch (error) {
-            console.error('API Error:', error);
-            
-            //пробуем альтернативный прокси, если первый не сработал
-            if (error.message.includes('Failed to fetch') && !fetchUrl.includes('allorigins')) {
-                console.log('Пробуем альтернативный прокси...');
-                const altUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url.toString())}`;
-                try {
-                    const altResponse = await fetch(altUrl, { method: 'GET' });
-                    if (altResponse.ok) {
-                        return await altResponse.json();
-                    }
-                } catch (altError) {
-                    console.error('Альтернативный прокси тоже не сработал:', altError);
-                }
-            }
-            
+            console.error('Direct API Error:', error);
             throw error;
         }
     },
     
+    //запрос через прокси (для HTTPS)
+    async proxyRequest(endpoint, method = 'GET', data = null) {
+        const url = new URL(`${API_BASE_URL}${endpoint}`);
+        url.searchParams.append('api_key', API_KEY);
+        
+        const targetUrl = url.toString();
+        let lastError = null;
+        
+        //пробуем разные прокси по очереди
+        for (const proxy of CORS_PROXIES) {
+            const proxyUrl = proxy + encodeURIComponent(targetUrl);
+            
+            const options = {
+                method,
+                headers: {
+                    'Accept': 'application/json',
+                }
+            };
+            
+            if (data && (method === 'POST' || method === 'PUT')) {
+                options.headers['Content-Type'] = 'application/json';
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                console.log(`Пробуем прокси: ${proxyUrl}`);
+                const response = await fetch(proxyUrl, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status} from proxy`);
+                }
+                
+                const result = await response.json();
+                console.log('Успешно через прокси:', proxy);
+                return result;
+                
+            } catch (error) {
+                console.warn(`Прокси ${proxy} не сработал:`, error.message);
+                lastError = error;
+                continue; // Пробуем следующий прокси
+            }
+        }
+        
+        //если все прокси не сработали
+        throw new Error(`Все прокси не сработали. Последняя ошибка: ${lastError?.message}`);
+    },
+    
+    //методы API
     async getCourses() {
         return await this.request('/api/courses');
     },
@@ -101,8 +144,12 @@ const Utils = {
     //форматирование даты
     formatDate(dateString) {
         if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ru-RU');
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU');
+        } catch (e) {
+            return dateString;
+        }
     },
     
     //форматирование времени
@@ -113,6 +160,7 @@ const Utils = {
     
     //форматирование суммы
     formatPrice(price) {
+        if (!price) return '0';
         return new Intl.NumberFormat('ru-RU').format(price);
     },
     
@@ -124,7 +172,7 @@ const Utils = {
             'completed': 'Завершена',
             'cancelled': 'Отменена'
         };
-        return statuses[status] || status;
+        return statuses[status] || status || 'Ожидает';
     },
     
     //получить класс для статуса
@@ -159,6 +207,58 @@ const Utils = {
                 setTimeout(() => alert.remove(), 150);
             }
         }, 5000);
+    },
+    
+    //генерация демо-данных при отсутствии доступа к API
+    generateDemoData(type) {
+        if (type === 'courses') {
+            return [
+                {
+                    id: 1,
+                    name: "Введение в русский язык",
+                    description: "Курс для начинающих изучать русский язык.",
+                    teacher: "Виктор Сергеевич",
+                    level: "Начальный",
+                    total_length: 8,
+                    week_length: 2,
+                    course_fee_per_hour: 200,
+                    start_dates: ["2025-02-01T09:00:00", "2025-02-01T12:00:00"]
+                },
+                {
+                    id: 2,
+                    name: "Английский для продвинутых",
+                    description: "Углубленное изучение грамматики английского языка.",
+                    teacher: "Анна Ивановна",
+                    level: "Продвинутый",
+                    total_length: 12,
+                    week_length: 3,
+                    course_fee_per_hour: 300,
+                    start_dates: ["2025-02-15T10:00:00"]
+                }
+            ];
+        } else if (type === 'tutors') {
+            return [
+                {
+                    id: 1,
+                    name: "Ирина Петровна",
+                    work_experience: 5,
+                    languages_spoken: ["Английский", "Испанский", "Русский"],
+                    languages_offered: ["Русский", "Английский"],
+                    language_level: "Продвинутый",
+                    price_per_hour: 500
+                },
+                {
+                    id: 2,
+                    name: "Александр Дмитриевич",
+                    work_experience: 8,
+                    languages_spoken: ["Английский", "Немецкий", "Французский"],
+                    languages_offered: ["Английский", "Немецкий"],
+                    language_level: "Эксперт",
+                    price_per_hour: 700
+                }
+            ];
+        }
+        return [];
     }
 };
 
@@ -167,7 +267,7 @@ const Auth = {
     //проверить, авторизован ли пользователь
     isAuthenticated() {
         const savedKey = localStorage.getItem('api_key');
-        return savedKey === API_KEY;
+        return savedKey === API_KEY || savedKey === 'demo'; // Демо-режим
     },
     
     //сохранить ключ
@@ -185,6 +285,12 @@ const Auth = {
     clearApiKey() {
         localStorage.removeItem('api_key');
         localStorage.removeItem('api_key_saved');
+    },
+    
+    //включить демо-режим
+    enableDemoMode() {
+        this.saveApiKey('demo');
+        Utils.showNotification('Включен демо-режим. Используются локальные данные.', 'info');
     },
     
     //показать модальное окно для ввода API ключа
@@ -210,10 +316,17 @@ const Auth = {
                                 <div class="form-text">Этот ключ идентифицирует вас в системе</div>
                             </div>
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="saveApiKeyCheck">
+                                <input class="form-check-input" type="checkbox" id="saveApiKeyCheck" checked>
                                 <label class="form-check-label" for="saveApiKeyCheck">
                                     Сохранить ключ на этом устройстве
                                 </label>
+                            </div>
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <strong>Проблемы с доступом к API?</strong>
+                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="Auth.enableDemoMode(); const modal = bootstrap.Modal.getInstance(document.getElementById('apiKeyModal')); modal.hide();">
+                                    Включить демо-режим
+                                </button>
                             </div>
                         </div>
                         <div class="modal-footer">
