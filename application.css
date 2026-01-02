@@ -167,18 +167,6 @@ select[multiple] option {
     100% { opacity: 1; }
 }
 
-/* стили для пагинации */
-.pagination .page-item.active .page-link {
-    background-color: #0d6efd;
-    border-color: #0d6efd;
-}
-
-/* стили для тултипов */
-.tooltip-inner {
-    max-width: 300px;
-    padding: 0.5rem 1rem;
-}
-
 /* стили для состояний загрузки */
 .loading {
     opacity: 0.5;
