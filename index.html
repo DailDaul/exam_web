@@ -291,7 +291,7 @@
                             <p><strong>Стоимость:</strong> <span id="basePricePerHour"></span> ₽/час</p>
                         </div>
                     </div>
-                    
+                
                     <!-- Информация о репетиторе -->
                     <div id="tutorInfo" class="card bg-light mb-3" style="display: none;">
                         <div class="card-body">
@@ -302,7 +302,7 @@
                             <p><strong>Стоимость:</strong> <span id="tutorPricePerHour"></span> ₽/час</p>
                         </div>
                     </div>
-                    
+                
                     <!-- Форма заявки -->
                     <form id="orderForm">
                         <div class="row mb-3">
@@ -315,7 +315,7 @@
                                 <input type="time" class="form-control" id="orderTime" required>
                             </div>
                         </div>
-                        
+                    
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label class="form-label">Количество человек (1-20) *</label>
@@ -326,63 +326,65 @@
                                 <input type="number" class="form-control" id="duration" min="1" max="8" value="1" required>
                             </div>
                         </div>
-                        
+                    
                         <h6 class="mt-4">Дополнительные опции</h6>
+                    
+                        <!-- Автоматически применяемые опции (только информация) -->
+                        <div id="autoAppliedOptions" class="alert alert-info mb-3" style="display: none;">
+                            <h6 class="mb-2"><i class="bi bi-stars"></i> Автоматически примененные опции:</h6>
+                            <div id="autoOptionsList"></div>
+                        </div>
+                    
+                        <!-- Скрытые поля для автоматических опций -->
+                        <input type="hidden" id="earlyRegistration" name="earlyRegistration">
+                        <input type="hidden" id="groupEnrollment" name="groupEnrollment">
+                        <input type="hidden" id="intensiveCourse" name="intensiveCourse">
+                    
                         <div class="row">
                             <div class="col-md-6">
+                                <!-- Доп. материалы (пользовательский выбор) -->
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input discount-option" type="checkbox" id="earlyRegistration">
-                                    <label class="form-check-label" for="earlyRegistration">
-                                        Скидка за раннюю регистрацию (10%)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input discount-option" type="checkbox" id="groupEnrollment">
-                                    <label class="form-check-label" for="groupEnrollment">
-                                        Групповая скидка (15% от 5+ человек)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="intensiveCourse">
-                                    <label class="form-check-label" for="intensiveCourse">
-                                        Интенсивный курс (+20%)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="supplementary">
-                                    <label class="form-check-label" for="supplementary">
+                                    <input class="form-check-input extra-option" type="checkbox" id="supplementaryCheck">
+                                    <label class="form-check-label" for="supplementaryCheck">
                                         Доп. материалы (+2000 ₽ на человека)
+                                    </label>
+                                </div>
+                            
+                                <!-- Индивидуальные занятия (пользовательский выбор) -->
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input extra-option" type="checkbox" id="personalizedCheck">
+                                    <label class="form-check-label" for="personalizedCheck">
+                                        Индивидуальные занятия (+1500 ₽/неделю)
                                     </label>
                                 </div>
                             </div>
                             <div class="col-md-6">
+                                <!-- Культурные экскурсии (пользовательский выбор) -->
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="personalized">
-                                    <label class="form-check-label" for="personalized">
-                                        Индивидуальные занятия (+1500 ₽/неделю)
-                                    </label>
-                                </div>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="excursions">
-                                    <label class="form-check-label" for="excursions">
+                                    <input class="form-check-input extra-option" type="checkbox" id="excursionsCheck">
+                                    <label class="form-check-label" for="excursionsCheck">
                                         Культурные экскурсии (+25%)
                                     </label>
                                 </div>
+                            
+                                <!-- Оценка уровня (пользовательский выбор) -->
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="assessment">
-                                    <label class="form-check-label" for="assessment">
+                                    <input class="form-check-input extra-option" type="checkbox" id="assessmentCheck">
+                                    <label class="form-check-label" for="assessmentCheck">
                                         Оценка уровня (+300 ₽)
                                     </label>
                                 </div>
+                            
+                                <!-- Интерактивная платформа (пользовательский выбор) -->
                                 <div class="form-check mb-2">
-                                    <input class="form-check-input extra-option" type="checkbox" id="interactive">
-                                    <label class="form-check-label" for="interactive">
+                                    <input class="form-check-input extra-option" type="checkbox" id="interactiveCheck">
+                                    <label class="form-check-label" for="interactiveCheck">
                                         Интерактивная платформа (+50%)
                                     </label>
                                 </div>
                             </div>
                         </div>
-                        
+                    
                         <!-- Итоговая стоимость -->
                         <div class="card bg-primary text-white mt-4">
                             <div class="card-body">
@@ -392,12 +394,14 @@
                                 </h5>
                             </div>
                         </div>
-                        
+                    
                         <div class="alert alert-info mt-3">
                             <i class="bi bi-info-circle"></i> 
                             Стоимость рассчитывается автоматически при изменении параметров заявки.
+                            <br>
+                            <small>Опции 1-3 применяются автоматически при выполнении условий.</small>
                         </div>
-                        
+                    
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                             <button type="submit" class="btn btn-primary">Отправить заявку</button>
