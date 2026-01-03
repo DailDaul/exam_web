@@ -529,6 +529,164 @@ async function applyForTutor(tutorId) {
     }
 }
 
+// Новая функция: проверка и применение автоматических опций
+function checkAndApplyAutoOptions() {
+    const autoOptions = {
+        earlyRegistration: false,
+        groupEnrollment: false,
+        intensiveCourse: false
+    };
+    const autoOptionsList = [];
+    
+    // 1. Проверка ранней регистрации (не менее чем за месяц вперед)
+    const selectedDate = document.getElementById('orderDate')?.value;
+    if (selectedDate) {
+        const today = new Date();
+        const orderDate = new Date(selectedDate);
+        const monthDiff = (orderDate - today) / (1000 * 60 * 60 * 24 * 30); // разница в месяцах
+        
+        if (monthDiff >= 1) {
+            autoOptions.earlyRegistration = true;
+            autoOptionsList.push({
+                name: 'Скидка за раннюю регистрацию',
+                description: 'Регистрация за месяц и более вперед',
+                effect: '-10%',
+                icon: 'bi-calendar-check'
+            });
+        }
+    }
+    
+    // 2. Проверка групповой записи (5 и более человек)
+    const persons = parseInt(document.getElementById('persons')?.value) || 1;
+    if (persons >= 5) {
+        autoOptions.groupEnrollment = true;
+        autoOptionsList.push({
+            name: 'Групповая скидка',
+            description: `Группа из ${persons} человек`,
+            effect: '-15%',
+            icon: 'bi-people-fill'
+        });
+    }
+    
+    // 3. Проверка интенсивного курса (5 часов в неделю и более)
+    const applicationType = sessionStorage.getItem('applicationType');
+    if (applicationType === 'course') {
+        const selectedCourse = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
+        if (selectedCourse.week_length >= 5) {
+            autoOptions.intensiveCourse = true;
+            autoOptionsList.push({
+                name: 'Интенсивный курс',
+                description: `${selectedCourse.week_length} часов в неделю`,
+                effect: '+20%',
+                icon: 'bi-lightning-charge'
+            });
+        }
+    }
+    
+    // Показываем плашку с автоматически примененными опциями
+    const autoOptionsContainer = document.getElementById('autoAppliedOptions');
+    const autoOptionsListContainer = document.getElementById('autoOptionsList');
+    
+    if (autoOptionsList.length > 0 && autoOptionsContainer && autoOptionsListContainer) {
+        autoOptionsContainer.style.display = 'block';
+        autoOptionsListContainer.innerHTML = autoOptionsList.map(option => `
+            <div class="d-flex align-items-center mb-1">
+                <i class="bi ${option.icon} me-2 text-primary"></i>
+                <div>
+                    <strong>${option.name}</strong> 
+                    <span class="badge ${option.effect.startsWith('+') ? 'bg-warning' : 'bg-success'} ms-2">
+                        ${option.effect}
+                    </span>
+                    <div class="text-muted small">${option.description}</div>
+                </div>
+            </div>
+        `).join('');
+    } else if (autoOptionsContainer) {
+        autoOptionsContainer.style.display = 'none';
+    }
+    
+    // Заполняем скрытые поля для отправки на сервер
+    document.getElementById('earlyRegistration').value = autoOptions.earlyRegistration;
+    document.getElementById('groupEnrollment').value = autoOptions.groupEnrollment;
+    document.getElementById('intensiveCourse').value = autoOptions.intensiveCourse;
+    
+    return autoOptions;
+}
+
+// Расчет общей стоимости
+function calculateTotalPrice() {
+    const applicationType = sessionStorage.getItem('applicationType');
+    
+    if (!applicationType) {
+        document.getElementById('totalCost').textContent = '0';
+        return;
+    }
+    
+    // Проверяем и применяем автоматические опции
+    const autoOptions = checkAndApplyAutoOptions();
+    
+    let selectedData = null;
+    
+    if (applicationType === 'course') {
+        selectedData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
+    } else if (applicationType === 'tutor') {
+        selectedData = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
+    } else {
+        document.getElementById('totalCost').textContent = '0';
+        return;
+    }
+    
+    const studentsNumber = parseInt(document.getElementById('persons')?.value) || 1;
+    const selectedDate = document.getElementById('orderDate')?.value;
+    const selectedTime = document.getElementById('orderTime')?.value;
+    
+    // Определяем длительность в часах
+    let durationInHours;
+    if (applicationType === 'course') {
+        durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
+    } else {
+        durationInHours = parseInt(document.getElementById('duration')?.value) || 1;
+    }
+    
+    // Собираем ВСЕ опции: автоматические + пользовательские
+    const options = {
+        // Автоматические опции
+        early_registration: autoOptions.earlyRegistration,
+        group_enrollment: autoOptions.groupEnrollment,
+        intensive_course: autoOptions.intensiveCourse,
+        
+        // Пользовательские опции
+        supplementary: document.getElementById('supplementaryCheck')?.checked || false,
+        personalized: document.getElementById('personalizedCheck')?.checked || false,
+        excursions: document.getElementById('excursionsCheck')?.checked || false,
+        assessment: document.getElementById('assessmentCheck')?.checked || false,
+        interactive: document.getElementById('interactiveCheck')?.checked || false
+    };
+    
+    // Рассчитываем стоимость
+    let totalPrice = 0;
+    
+    try {
+        totalPrice = Utils.calculateCoursePrice(
+            selectedData, 
+            selectedDate, 
+            selectedTime, 
+            studentsNumber,
+            durationInHours,
+            options
+        );
+    } catch (error) {
+        console.error('Ошибка расчета стоимости:', error);
+        totalPrice = 0;
+    }
+    
+    // Отображаем итоговую стоимость
+    const totalCostElement = document.getElementById('totalCost');
+    if (totalCostElement) {
+        totalCostElement.textContent = Utils.formatPrice(Math.round(totalPrice));
+    }
+}
+
 // Инициализация модального окна заказа
 function initOrderModal() {
     const orderForm = document.getElementById('orderForm');
@@ -544,8 +702,8 @@ function initOrderModal() {
         }
     });
     
-    // Обработчики для чекбоксов
-    document.querySelectorAll('.form-check-input').forEach(checkbox => {
+    // Обработчики для пользовательских чекбоксов
+    document.querySelectorAll('.extra-option').forEach(checkbox => {
         checkbox.addEventListener('change', calculateTotalPrice);
     });
     
@@ -554,6 +712,7 @@ function initOrderModal() {
     const orderDateInput = document.getElementById('orderDate');
     if (orderDateInput) {
         orderDateInput.min = today;
+        orderDateInput.value = today;
     }
 }
 
@@ -578,81 +737,16 @@ function resetOrderForm() {
         }
     }
     
+    // Скрываем плашку автоматических опций
+    const autoOptionsContainer = document.getElementById('autoAppliedOptions');
+    if (autoOptionsContainer) {
+        autoOptionsContainer.style.display = 'none';
+    }
+    
     calculateTotalPrice();
 }
 
-// Расчет общей стоимости - ИСПРАВЛЕННАЯ ФУНКЦИЯ
-function calculateTotalPrice() {
-    const applicationType = sessionStorage.getItem('applicationType');
-    
-    if (!applicationType) {
-        document.getElementById('totalCost').textContent = '0';
-        return;
-    }
-    
-    let selectedData = null;
-    
-    if (applicationType === 'course') {
-        selectedData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-    } else if (applicationType === 'tutor') {
-        selectedData = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
-    } else {
-        document.getElementById('totalCost').textContent = '0';
-        return;
-    }
-    
-    const studentsNumber = parseInt(document.getElementById('persons')?.value) || 1;
-    const selectedDate = document.getElementById('orderDate')?.value;
-    const selectedTime = document.getElementById('orderTime')?.value;
-    
-    // Определяем длительность в часах согласно типу заявки
-    let durationInHours;
-    
-    if (applicationType === 'course') {
-        // Для курсов: общая длительность = недель × часов в неделю
-        durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
-    } else {
-        // Для репетиторов: длительность берем из поля в форме
-        durationInHours = parseInt(document.getElementById('duration')?.value) || 1;
-    }
-    
-    // Собираем опции
-    const options = {
-        early_registration: document.getElementById('earlyRegistration')?.checked || false,
-        group_enrollment: document.getElementById('groupEnrollment')?.checked || false,
-        intensive_course: document.getElementById('intensiveCourse')?.checked || false,
-        supplementary: document.getElementById('supplementary')?.checked || false,
-        personalized: document.getElementById('personalized')?.checked || false,
-        excursions: document.getElementById('excursions')?.checked || false,
-        assessment: document.getElementById('assessment')?.checked || false,
-        interactive: document.getElementById('interactive')?.checked || false
-    };
-    
-    // Используем исправленную функцию расчета согласно требованию 3.3.4
-    let totalPrice = 0;
-    
-    try {
-        totalPrice = Utils.calculateCoursePrice(
-            selectedData, 
-            selectedDate, 
-            selectedTime, 
-            studentsNumber,  // было: persons, стало: studentsNumber (по требованию)
-            durationInHours, // явно передаем длительность
-            options
-        );
-    } catch (error) {
-        console.error('Ошибка расчета стоимости:', error);
-        totalPrice = 0;
-    }
-    
-    // Отображаем итоговую стоимость
-    const totalCostElement = document.getElementById('totalCost');
-    if (totalCostElement) {
-        totalCostElement.textContent = Utils.formatPrice(Math.round(totalPrice));
-    }
-}
-
-// Отправка заявки - ИСПРАВЛЕННАЯ ФУНКЦИЯ
+// Отправка заявки
 async function submitOrder(event) {
     event.preventDefault();
     
@@ -683,7 +777,7 @@ async function submitOrder(event) {
             return;
         }
         
-        // Определяем длительность для расчета
+        // Определяем длительность
         let durationInHours;
         if (applicationType === 'course') {
             durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
@@ -691,19 +785,25 @@ async function submitOrder(event) {
             durationInHours = parseInt(document.getElementById('duration').value) || 1;
         }
         
-        // Собираем опции для расчета
+        // Проверяем автоматические опции
+        const autoOptions = checkAndApplyAutoOptions();
+        
+        // Собираем ВСЕ опции
         const options = {
-            early_registration: document.getElementById('earlyRegistration').checked,
-            group_enrollment: document.getElementById('groupEnrollment').checked,
-            intensive_course: document.getElementById('intensiveCourse').checked,
-            supplementary: document.getElementById('supplementary').checked,
-            personalized: document.getElementById('personalized').checked,
-            excursions: document.getElementById('excursions').checked,
-            assessment: document.getElementById('assessment').checked,
-            interactive: document.getElementById('interactive').checked
+            // Автоматические опции
+            early_registration: autoOptions.earlyRegistration,
+            group_enrollment: autoOptions.groupEnrollment,
+            intensive_course: autoOptions.intensiveCourse,
+            
+            // Пользовательские опции
+            supplementary: document.getElementById('supplementaryCheck')?.checked || false,
+            personalized: document.getElementById('personalizedCheck')?.checked || false,
+            excursions: document.getElementById('excursionsCheck')?.checked || false,
+            assessment: document.getElementById('assessmentCheck')?.checked || false,
+            interactive: document.getElementById('interactiveCheck')?.checked || false
         };
         
-        // Рассчитываем итоговую стоимость с использованием исправленной формулы
+        // Рассчитываем стоимость
         const calculatedPrice = Utils.calculateCoursePrice(
             selectedData,
             selectedDate,
@@ -713,20 +813,23 @@ async function submitOrder(event) {
             options
         );
         
-        // Используем единый формат данных
+        // Формируем данные для отправки - ДОБАВЛЯЕМ ПОЛЕ duration
         const formData = {
             date_start: selectedDate,
             time_start: selectedTime,
             persons: studentsNumber,
-            early_registration: document.getElementById('earlyRegistration').checked,
-            group_enrollment: document.getElementById('groupEnrollment').checked,
-            intensive_course: document.getElementById('intensiveCourse').checked,
-            supplementary: document.getElementById('supplementary').checked,
-            personalized: document.getElementById('personalized').checked,
-            excursions: document.getElementById('excursions').checked,
-            assessment: document.getElementById('assessment').checked,
-            interactive: document.getElementById('interactive').checked,
-            price: calculatedPrice  // Используем рассчитанную стоимость
+            duration: durationInHours, // ВАЖНО: добавлено поле duration для API
+            // Автоматические опции
+            early_registration: autoOptions.earlyRegistration,
+            group_enrollment: autoOptions.groupEnrollment,
+            intensive_course: autoOptions.intensiveCourse,
+            // Пользовательские опции
+            supplementary: document.getElementById('supplementaryCheck')?.checked || false,
+            personalized: document.getElementById('personalizedCheck')?.checked || false,
+            excursions: document.getElementById('excursionsCheck')?.checked || false,
+            assessment: document.getElementById('assessmentCheck')?.checked || false,
+            interactive: document.getElementById('interactiveCheck')?.checked || false,
+            price: calculatedPrice
         };
         
         if (applicationType === 'course') {
@@ -737,84 +840,7 @@ async function submitOrder(event) {
             formData.course_id = 0;
         }
         
-        console.log('Отправка заявки с расчетом по формуле 3.3.4:', formData);
-        
-        // Отправляем заявку
-        const result = await API.createOrder(formData);
-        
-        Utils.showNotification('Заявка успешно создана!', 'success');
-        
-        // Закрываем модальное окно
-        const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
-        modal.hide();
-        
-        // Перенаправляем в личный кабинет
-        setTimeout(() => {
-            window.location.href = 'cabinet.html';
-        }, 1500);
-        
-    } catch (error) {
-        console.error('Ошибка создания заявки:', error);
-        Utils.showNotification(`Ошибка: ${error.message}`, 'danger');
-    }
-}
-
-// Отправка заявки
-async function submitOrder(event) {
-    event.preventDefault();
-    
-    if (!Auth.isAuthenticated()) {
-        Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
-        return;
-    }
-    
-    try {
-        const applicationType = sessionStorage.getItem('applicationType');
-        let selectedData = null;
-        
-        if (applicationType === 'course') {
-            selectedData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
-        } else if (applicationType === 'tutor') {
-            selectedData = JSON.parse(sessionStorage.getItem('selectedTutor') || '{}');
-        } else {
-            Utils.showNotification('Не выбран курс или репетитор', 'warning');
-            return;
-        }
-        
-        const selectedDate = document.getElementById('orderDate').value;
-        const selectedTime = document.getElementById('orderTime').value;
-        const persons = parseInt(document.getElementById('persons').value) || 1;
-        
-        if (!selectedDate || !selectedTime) {
-            Utils.showNotification('Выберите дату и время занятия', 'warning');
-            return;
-        }
-        
-        // Используем единый формат данных
-        const formData = {
-            date_start: selectedDate,
-            time_start: selectedTime,
-            persons: persons,
-            early_registration: document.getElementById('earlyRegistration').checked,
-            group_enrollment: document.getElementById('groupEnrollment').checked,
-            intensive_course: document.getElementById('intensiveCourse').checked,
-            supplementary: document.getElementById('supplementary').checked,
-            personalized: document.getElementById('personalized').checked,
-            excursions: document.getElementById('excursions').checked,
-            assessment: document.getElementById('assessment').checked,
-            interactive: document.getElementById('interactive').checked,
-            price: parseInt(document.getElementById('totalCost').textContent.replace(/\s/g, ''))
-        };
-        
-        if (applicationType === 'course') {
-            formData.course_id = selectedData.id;
-            formData.tutor_id = 0;
-        } else {
-            formData.tutor_id = selectedData.id;
-            formData.course_id = 0;
-        }
-        
-        console.log('Отправка заявки:', formData);
+        console.log('Отправка заявки с данными:', formData);
         
         // Отправляем заявку
         const result = await API.createOrder(formData);
