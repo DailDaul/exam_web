@@ -3,6 +3,25 @@
 const API_BASE_URL = 'http://exam-api-courses.std-900.ist.mospolytech.ru';
 const API_KEY = '9f17101c-61e9-4f97-8d3f-7c13ded0e7d4';
 
+// Список официальных нерабочих праздничных дней для России
+const RUSSIAN_HOLIDAYS = {
+  // 2026 год
+  '2026-01-01': 'Новый год',
+  '2026-01-02': 'Новый год',
+  '2026-01-03': 'Новый год',
+  '2026-01-04': 'Новый год',
+  '2026-01-05': 'Новый год',
+  '2026-01-06': 'Новый год',
+  '2026-01-07': 'Рождество Христово',
+  '2026-01-08': 'Новогодние каникулы',
+  '2026-02-23': 'День защитника Отечества',
+  '2026-03-08': 'Международный женский день',
+  '2026-05-01': 'Праздник Весны и Труда',
+  '2026-05-09': 'День Победы',
+  '2026-06-12': 'День России',
+  '2026-11-04': 'День народного единства',
+};
+
 //объект для работы с API
 const API = {
     //общая функция для выполнения запросов
@@ -153,45 +172,72 @@ const Utils = {
         }, 5000);
     },
     
-    //расчет стоимости (единая функция для курсов и репетиторов)
-    calculateCoursePrice(course, selectedDate, selectedTime, persons, options) {
-        //для репетиторов используем price_per_hour
+    //проверка, является ли дата праздником
+    isHoliday(dateString) {
+        if (!dateString) return false;
+        
+        // Форматируем дату в формат YYYY-MM-DD для сравнения
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        return RUSSIAN_HOLIDAYS.hasOwnProperty(formattedDate);
+    },
+    
+    //расчет стоимости (единая функция для курсов и репетиторов) согласно ТРЕБОВАНИЮ 3.3.4
+    calculateCoursePrice(course, selectedDate, selectedTime, studentsNumber, durationInHours, options) {
+        // Проверка обязательных параметров
+        if (!course || !selectedDate || !selectedTime || !studentsNumber || !durationInHours) {
+            console.error('Недостаточно данных для расчета стоимости');
+            return 0;
+        }
+        
+        // Определяем стоимость за час
         const isTutor = course.price_per_hour !== undefined;
-        let basePricePerHour = isTutor ? course.price_per_hour : course.course_fee_per_hour;
-        let totalHours = isTutor ? 1 : (course.week_length || 0) * (course.total_length || 0);
+        const courseFeePerHour = isTutor ? course.price_per_hour : course.course_fee_per_hour;
         
-        if (!basePricePerHour) basePricePerHour = 0;
-        if (!totalHours) totalHours = 1;
+        if (!courseFeePerHour || courseFeePerHour <= 0) {
+            console.warn('Стоимость за час не указана или равна 0');
+            return 0;
+        }
         
-        let basePrice = basePricePerHour * totalHours;
-        
-        //проверяем выходные/праздники
+        // 1. Проверка на выходные и праздники
         const date = new Date(selectedDate);
-        const dayOfWeek = date.getDay(); //0-воскресенье, 6-суббота
+        const dayOfWeek = date.getDay(); // 0-воскресенье, 6-суббота
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const weekendMultiplier = isWeekend ? 1.5 : 1;
+        const isHoliday = this.isHoliday(selectedDate);
         
-        //утренняя доплата (9:00-12:00)
+        // Коэффициент согласно требованию: выходные или праздники = 1.5, будни = 1
+        const isWeekendOrHoliday = (isWeekend || isHoliday) ? 1.5 : 1;
+        
+        // 2. Утренняя доплата (9:00-12:00)
         const hour = selectedTime ? parseInt(selectedTime.split(':')[0]) : 0;
-        let morningSurcharge = (hour >= 9 && hour < 12) ? 400 : 0;
+        const morningSurcharge = (hour >= 9 && hour < 12) ? 400 : 0;
         
-        //вечерняя доплата (18:00-20:00)
-        let eveningSurcharge = (hour >= 18 && hour < 20) ? 1000 : 0;
+        // 3. Вечерняя доплата (18:00-20:00)
+        const eveningSurcharge = (hour >= 18 && hour < 20) ? 1000 : 0;
         
-        //базовая формула
-        let total = ((basePrice * weekendMultiplier) + morningSurcharge + eveningSurcharge) * persons;
+        // 4. Базовая формула согласно требованию 3.3.4:
+        // Общая стоимость = ((courseFeePerHour × durationInHours × isWeekendOrHoliday) + morningSurcharge + eveningSurcharge) × studentsNumber
+        let totalCost = ((courseFeePerHour * durationInHours * isWeekendOrHoliday) + morningSurcharge + eveningSurcharge) * studentsNumber;
         
-        //применяем опции
-        if (options.early_registration) total *= 0.9; // -10%
-        if (options.group_enrollment && persons >= 5) total *= 0.85; // -15%
-        if (options.intensive_course) total *= 1.2; // +20%
-        if (options.supplementary) total += 2000 * persons;
-        if (options.personalized && !isTutor) total += 1500 * (course.total_length || 0);
-        if (options.excursions) total *= 1.25; // +25%
-        if (options.assessment) total += 300;
-        if (options.interactive) total *= 1.5; // +50%
+        // 5. Применяем дополнительные опции (если они переданы)
+        if (options) {
+            // Дополнительные скидки и надбавки
+            if (options.early_registration) totalCost *= 0.9; // -10%
+            if (options.group_enrollment && studentsNumber >= 5) totalCost *= 0.85; // -15%
+            if (options.intensive_course) totalCost *= 1.2; // +20%
+            if (options.supplementary) totalCost += 2000 * studentsNumber;
+            if (options.personalized && !isTutor) totalCost += 1500 * (course.total_length || 0);
+            if (options.excursions) totalCost *= 1.25; // +25%
+            if (options.assessment) totalCost += 300;
+            if (options.interactive) totalCost *= 1.5; // +50%
+        }
         
-        return Math.round(total);
+        // Округляем до целого числа
+        return Math.round(totalCost);
     }
 };
 
