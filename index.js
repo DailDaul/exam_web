@@ -966,24 +966,6 @@ function searchCourses() {
 
 //инициализация обработчиков событий
 function initEventHandlers() {
-    //поиск курсов
-    const searchBtn = document.querySelector('button[onclick*="searchCourses"]');
-    if (searchBtn) {
-        searchBtn.onclick = searchCourses;
-    }
-    
-    const courseNameInput = document.getElementById('courseNameInput');
-    if (courseNameInput) {
-        courseNameInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') searchCourses();
-        });
-    }
-    
-    const courseLevelSelect = document.getElementById('courseLevelSelect');
-    if (courseLevelSelect) {
-        courseLevelSelect.addEventListener('change', searchCourses);
-    }
-    
     //фильтрация репетиторов
     const tutorLanguages = document.getElementById('tutorLanguages');
     const tutorLanguageLevel = document.getElementById('tutorLanguageLevel');
@@ -1003,7 +985,6 @@ function initEventHandlers() {
 }
 
 //глобальные функции
-window.searchCourses = searchCourses;
 window.filterTutors = filterTutors;
 window.applyForCourse = applyForCourse;
 window.applyForTutor = applyForTutor;
