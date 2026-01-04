@@ -112,7 +112,25 @@
     <section id="courses" class="py-5 bg-light">
         <div class="container">
             <h2 class="text-center mb-4">Предлагаемые курсы</h2>
-            
+        
+            <!-- Форма поиска курсов -->
+            <div class="row mb-4">
+                <div class="col-md-8 mx-auto">
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="courseNameInput" placeholder="Название курса">
+                        <select class="form-select" id="courseLevelSelect" style="max-width: 200px;">
+                            <option value="">Все уровни</option>
+                            <option value="Beginner">Начальный</option>
+                            <option value="Intermediate">Средний</option>
+                            <option value="Advanced">Продвинутый</option>
+                        </select>
+                        <button class="btn btn-primary" onclick="searchCourses()">
+                            <i class="bi bi-search"></i> Поиск
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Список курсов -->
             <div id="coursesContainer" class="row g-4">
                 <div class="col-12 text-center">
