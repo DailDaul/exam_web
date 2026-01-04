@@ -5,6 +5,10 @@ let allOrders = [];
 let currentOrderPage = 1;
 const ordersPerPage = 5; //по требованию: максимум 5 записей на страницу
 
+// Переменная для хранения данных текущей редактируемой заявки
+let currentEditOrderData = null;
+let currentEditCourseOrTutorData = null;
+
 //инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Личный кабинет загружен');
@@ -299,7 +303,12 @@ async function showOrderDetails(orderId) {
 //редактирование заявки
 async function editOrder(orderId) {
     try {
+        //сбрасываем предыдущие данные
+        currentEditOrderData = null;
+        currentEditCourseOrTutorData = null;
+        
         const order = await API.getOrder(orderId);
+        currentEditOrderData = order;
         
         //заполняем форму редактирования
         document.getElementById('editOrderId').textContent = order.id;
@@ -318,6 +327,24 @@ async function editOrder(orderId) {
         document.getElementById('editAssessment').checked = order.assessment || false;
         document.getElementById('editInteractive').checked = order.interactive || false;
         
+        //загружаем данные о курсе или репетиторе
+        let durationInHours = 1;
+        
+        if (order.course_id > 0) {
+            //получаем данные о курсе
+            currentEditCourseOrTutorData = await API.getCourse(order.course_id);
+            //для курса длительность = недели * часы в неделю
+            durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
+        } else if (order.tutor_id > 0) {
+            //получаем данные о репетиторе
+            currentEditCourseOrTutorData = await API.getTutor(order.tutor_id);
+            //для репетитора используем длительность из исходной заявки или 1 час
+            durationInHours = order.duration || 1;
+        }
+        
+        //показываем текущую стоимость
+        updateEditPricePreview();
+        
         //показываем модальное окно
         const modal = new bootstrap.Modal(document.getElementById('editModal'));
         modal.show();
@@ -325,6 +352,75 @@ async function editOrder(orderId) {
     } catch (error) {
         console.error('Ошибка загрузки заявки для редактирования:', error);
         Utils.showNotification('Не удалось загрузить данные для редактирования', 'error');
+    }
+}
+
+//функция предпросмотра стоимости при редактировании
+function updateEditPricePreview() {
+    if (!currentEditOrderData || !currentEditCourseOrTutorData) {
+        console.warn('Нет данных для расчета стоимости');
+        return;
+    }
+    
+    try {
+        //собираем опции из формы
+        const options = {
+            early_registration: document.getElementById('editEarlyRegistration').checked,
+            group_enrollment: document.getElementById('editGroupEnrollment').checked,
+            intensive_course: document.getElementById('editIntensiveCourse').checked,
+            supplementary: document.getElementById('editSupplementary').checked,
+            personalized: document.getElementById('editPersonalized').checked,
+            excursions: document.getElementById('editExcursions').checked,
+            assessment: document.getElementById('editAssessment').checked,
+            interactive: document.getElementById('editInteractive').checked
+        };
+        
+        //получаем значения из формы или используем оригинальные
+        const newDate = document.getElementById('editDate').value || currentEditOrderData.date_start;
+        const newTime = document.getElementById('editTime').value || currentEditOrderData.time_start;
+        const newPersons = parseInt(document.getElementById('editPersons').value) || currentEditOrderData.persons;
+        
+        //определяем длительность в часах
+        let durationInHours = 1;
+        if (currentEditOrderData.course_id > 0) {
+            //это курс
+            durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
+        } else if (currentEditOrderData.tutor_id > 0) {
+            //это репетитор
+            durationInHours = currentEditOrderData.duration || 1;
+        }
+        
+        //рассчитываем новую стоимость
+        const newPrice = Utils.calculateCoursePrice(
+            currentEditCourseOrTutorData,
+            newDate,
+            newTime,
+            newPersons,
+            durationInHours,
+            options
+        );
+        
+        //показываем предпросмотр
+        const previewElement = document.getElementById('editPricePreview');
+        const newPriceValue = document.getElementById('newPriceValue');
+        const oldPriceValue = document.getElementById('oldPriceValue');
+        
+        if (previewElement && newPriceValue && oldPriceValue) {
+            newPriceValue.textContent = Utils.formatPrice(Math.round(newPrice));
+            oldPriceValue.textContent = Utils.formatPrice(currentEditOrderData.price || 0);
+            previewElement.style.display = 'block';
+            
+            //подсветка изменения
+            if (newPrice !== currentEditOrderData.price) {
+                previewElement.className = newPrice > currentEditOrderData.price ? 
+                    'alert alert-warning mt-3' : 'alert alert-success mt-3';
+            } else {
+                previewElement.className = 'alert alert-info mt-3';
+            }
+        }
+        
+    } catch (error) {
+        console.error('Ошибка расчета предпросмотра стоимости:', error);
     }
 }
 
@@ -366,6 +462,11 @@ async function saveOrderChanges(event) {
     try {
         const orderId = document.getElementById('editId').value;
         
+        if (!currentEditOrderData || !currentEditCourseOrTutorData) {
+            Utils.showNotification('Ошибка: данные заявки не загружены', 'danger');
+            return;
+        }
+        
         const updatedData = {
             date_start: document.getElementById('editDate').value,
             time_start: document.getElementById('editTime').value,
@@ -380,9 +481,47 @@ async function saveOrderChanges(event) {
             interactive: document.getElementById('editInteractive').checked
         };
         
+        //РАСЧЕТ НОВОЙ СТОИМОСТИ
+        //определяем длительность в часах
+        let durationInHours = 1;
+        if (currentEditOrderData.course_id > 0) {
+            //это курс
+            durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
+        } else if (currentEditOrderData.tutor_id > 0) {
+            //это репетитор
+            durationInHours = currentEditOrderData.duration || 1;
+        }
+        
+        //рассчитываем новую стоимость с помощью Utils.calculateCoursePrice
+        const options = {
+            early_registration: updatedData.early_registration,
+            group_enrollment: updatedData.group_enrollment,
+            intensive_course: updatedData.intensive_course,
+            supplementary: updatedData.supplementary,
+            personalized: updatedData.personalized,
+            excursions: updatedData.excursions,
+            assessment: updatedData.assessment,
+            interactive: updatedData.interactive
+        };
+        
+        const newPrice = Utils.calculateCoursePrice(
+            currentEditCourseOrTutorData,
+            updatedData.date_start,
+            updatedData.time_start,
+            updatedData.persons,
+            durationInHours,
+            options
+        );
+        
+        updatedData.price = Math.round(newPrice);
+        updatedData.duration = durationInHours; //сохраняем длительность
+        
+        console.log('Обновление заявки с данными:', updatedData);
+        
         await API.updateOrder(orderId, updatedData);
         
-        Utils.showNotification('Заявка успешно обновлена', 'success');
+        Utils.showNotification('Заявка успешно обновлена. Новая стоимость: ' + 
+                              Utils.formatPrice(updatedData.price) + ' ₽', 'success');
         
         //закрываем модальное окно
         const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
@@ -395,6 +534,34 @@ async function saveOrderChanges(event) {
         console.error('Ошибка обновления заявки:', error);
         Utils.showNotification(`Ошибка обновления: ${error.message}`, 'danger');
     }
+}
+
+//инициализация обработчиков событий для модального окна редактирования
+function initEditModalHandlers() {
+    //удаляем старые обработчики
+    const formElements = [
+        'editDate', 'editTime', 'editPersons',
+        'editEarlyRegistration', 'editGroupEnrollment', 'editIntensiveCourse',
+        'editSupplementary', 'editPersonalized', 'editExcursions',
+        'editAssessment', 'editInteractive'
+    ];
+    
+    formElements.forEach(elementId => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            //создаем копию элемента и заменяем его для сброса всех обработчиков
+            const newElement = element.cloneNode(true);
+            element.parentNode.replaceChild(newElement, element);
+            
+            //добавляем новый обработчик
+            newElement.addEventListener('change', updateEditPricePreview);
+            newElement.addEventListener('input', function() {
+                if (this.type === 'number' || this.type === 'date' || this.type === 'time') {
+                    updateEditPricePreview();
+                }
+            });
+        }
+    });
 }
 
 //инициализация обработчиков событий
@@ -424,6 +591,9 @@ function initEventHandlers() {
             window.location.href = 'index.html';
         });
     }
+    
+    //инициализация обработчиков для модального окна редактирования
+    initEditModalHandlers();
 }
 
 //глобальные функции
@@ -431,3 +601,4 @@ window.showOrderDetails = showOrderDetails;
 window.editOrder = editOrder;
 window.confirmDelete = confirmDelete;
 window.changeOrderPage = changeOrderPage;
+window.updateEditPricePreview = updateEditPricePreview;
