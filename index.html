@@ -113,39 +113,6 @@
         <div class="container">
             <h2 class="text-center mb-4">Предлагаемые курсы</h2>
             
-            <!-- Форма поиска курсов -->
-            <div class="row mb-4">
-                <div class="col-md-8 mx-auto">
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="courseNameInput" placeholder="Название курса">
-                        <select class="form-select" id="courseLevelSelect" style="max-width: 200px;">
-                            <option value="">Все уровни</option>
-                            <option value="Beginner">Начальный</option>
-                            <option value="Intermediate">Средний</option>
-                            <option value="Advanced">Продвинутый</option>
-                        </select>
-						<table class="table table-hover mt-3" id="coursesTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Название курса</th>
-                                <th>Преподаватель</th>
-                                <th>Уровень</th>
-                                <th>Длительность</th>
-                                <th>Стоимость/час</th>
-                                <th>Действия</th>
-                            </tr>
-                        </thead>
-                            <tbody id="coursesTableBody">
-                            <!-- Заполняется через JS -->
-                            </tbody>
-                        </table>
-                        <button class="btn btn-primary" onclick="searchCourses()">
-                            <i class="bi bi-search"></i> Поиск
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Список курсов -->
             <div id="coursesContainer" class="row g-4">
                 <div class="col-12 text-center">
