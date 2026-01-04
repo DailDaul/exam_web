@@ -1,39 +1,39 @@
 'use strict';
 
-// Глобальные переменные
+//глобальные переменные
 let allCourses = [];
 let allTutors = [];
 let currentPage = 1;
 const itemsPerPage = 5;
 
-// Переменные для работы с репетиторами
+//переменные для работы с репетиторами
 let selectedTutorId = null;
 let allLanguages = new Set(); // Для хранения уникальных языков
 
-// Инициализация при загрузке страницы
+//инициализация при загрузке страницы
 document.addEventListener('DOMContentLoaded', async function() {
     console.log('Страница загружена');
     
-    // Автоматически сохраняем API Key при первой загрузке
+    //автоматически сохраняем API Key при первой загрузке
     if (!Auth.isAuthenticated()) {
         Auth.saveApiKey(API_KEY);
         Utils.showNotification('API Key автоматически сохранен', 'success');
     }
     
-    // Загружаем курсы
+    //загружаем курсы
     await loadCourses();
     
-    // Загружаем репетиторы
+    //загружаем репетиторы
     await loadTutors();
     
-    // Инициализируем обработчики
+    //инициализируем обработчики
     initEventHandlers();
     
-    // Инициализируем модальное окно заказа
+    //инициализируем модальное окно заказа
     initOrderModal();
 });
 
-// Загрузка курсов
+//загрузка курсов
 async function loadCourses() {
     try {
         const coursesContainer = document.getElementById('coursesContainer');
@@ -69,7 +69,7 @@ async function loadCourses() {
     }
 }
 
-// Отображение курсов
+//отображение курсов
 function displayCourses(courses) {
     const container = document.getElementById('coursesContainer');
     if (!container) return;
@@ -83,7 +83,7 @@ function displayCourses(courses) {
         return;
     }
     
-    // Пагинация
+    //пагинация
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const paginatedCourses = courses.slice(startIndex, endIndex);
@@ -113,7 +113,7 @@ function displayCourses(courses) {
     `).join('');
 }
 
-// Пагинация курсов
+//пагинация курсов
 function setupCoursesPagination() {
     const pagination = document.getElementById('coursesPagination');
     if (!pagination) return;
@@ -158,7 +158,7 @@ function changePage(page) {
     window.scrollTo({ top: document.getElementById('courses').offsetTop, behavior: 'smooth' });
 }
 
-// Загрузка репетиторов
+//загрузка репетиторов
 async function loadTutors() {
     try {
         const tutorsContainer = document.getElementById('tutorsContainer');
@@ -180,7 +180,7 @@ async function loadTutors() {
         allTutors = await API.getTutors();
         console.log('Загружено репетиторов:', allTutors.length);
         
-        // Собираем уникальные языки
+        //собираем уникальные языки
         allLanguages.clear();
         allTutors.forEach(tutor => {
             if (tutor.languages_offered && Array.isArray(tutor.languages_offered)) {
@@ -188,10 +188,10 @@ async function loadTutors() {
             }
         });
         
-        // Заполняем выпадающий список языков
+        //заполняем выпадающий список языков
         populateLanguagesFilter();
         
-        // Отображаем репетиторов в таблице
+        //отображаем репетиторов в таблице
         displayTutorsInTable(allTutors);
         
     } catch (error) {
@@ -212,15 +212,15 @@ async function loadTutors() {
     }
 }
 
-// Заполнение фильтра языков
+//заполнение фильтра языков
 function populateLanguagesFilter() {
     const languagesSelect = document.getElementById('tutorLanguages');
     if (!languagesSelect) return;
     
-    // Очищаем текущие опции (кроме первой)
+    //очищаем текущие опции (кроме первой)
     languagesSelect.innerHTML = '<option value="">Все языки</option>';
     
-    // Добавляем уникальные языки
+    //добавляем уникальные языки
     const sortedLanguages = Array.from(allLanguages).sort();
     sortedLanguages.forEach(language => {
         const option = document.createElement('option');
@@ -230,7 +230,7 @@ function populateLanguagesFilter() {
     });
 }
 
-// Отображение репетиторов в таблице
+//отображение репетиторов в таблице
 function displayTutorsInTable(tutors) {
     const tableBody = document.getElementById('tutorSearchTableBody');
     const noTutorsMessage = document.getElementById('noTutorsMessage');
@@ -246,15 +246,15 @@ function displayTutorsInTable(tutors) {
     if (noTutorsMessage) noTutorsMessage.classList.add('d-none');
     
     tableBody.innerHTML = tutors.map(tutor => {
-        // Определяем языки преподавания
+        //определяем языки преподавания
         const teachingLanguages = tutor.languages_offered ? 
             tutor.languages_offered.join(', ') : 'Не указано';
         
-        // Определяем языки, на которых говорит репетитор
+        //определяем языки, на которых говорит репетитор
         const spokenLanguages = tutor.languages_spoken ?
             tutor.languages_spoken.join(', ') : 'Не указано';
         
-        // Проверяем, выбран ли этот репетитор
+        //проверяем, выбран ли этот репетитор
         const isSelected = selectedTutorId === tutor.id;
         const rowClass = isSelected ? 'table-primary' : '';
         
@@ -289,27 +289,27 @@ function displayTutorsInTable(tutors) {
     }).join('');
 }
 
-// Выбор репетитора из таблицы
+//выбор репетитора из таблицы
 function selectTutor(tutorId) {
     selectedTutorId = tutorId;
     
-    // Сбрасываем выделение всех строк
+    //сбрасываем выделение всех строк
     const allRows = document.querySelectorAll('#tutorSearchTable tbody tr');
     allRows.forEach(row => {
         row.classList.remove('table-primary');
     });
     
-    // Выделяем выбранную строку
+    //выделяем выбранную строку
     const selectedRow = document.querySelector(`tr[data-tutor-id="${tutorId}"]`);
     if (selectedRow) {
         selectedRow.classList.add('table-primary');
         
-        // Показываем панель действий
+        //показываем панель действий
         showTutorActionsPanel(tutorId);
     }
 }
 
-// Показ панели действий для выбранного репетитора
+//показ панели действий для выбранного репетитора
 function showTutorActionsPanel(tutorId) {
     const actionsContainer = document.getElementById('tutorActionsContainer');
     if (!actionsContainer) return;
@@ -354,21 +354,21 @@ function showTutorActionsPanel(tutorId) {
         </div>
     `;
     
-    // Прокручиваем к панели действий
+    //прокручиваем к панели действий
     actionsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// Отмена выбора репетитора
+//отмена выбора репетитора
 function deselectTutor() {
     selectedTutorId = null;
     
-    // Сбрасываем выделение всех строк
+    //сбрасываем выделение всех строк
     const allRows = document.querySelectorAll('#tutorSearchTable tbody tr');
     allRows.forEach(row => {
         row.classList.remove('table-primary');
     });
     
-    // Скрываем панель действий
+    //скрываем панель действий
     const actionsContainer = document.getElementById('tutorActionsContainer');
     if (actionsContainer) {
         actionsContainer.style.display = 'none';
@@ -376,7 +376,7 @@ function deselectTutor() {
     }
 }
 
-// Фильтрация репетиторов
+//фильтрация репетиторов
 function filterTutors() {
     const selectedLanguage = document.getElementById('tutorLanguages')?.value || '';
     const selectedLevel = document.getElementById('tutorLanguageLevel')?.value || '';
@@ -384,7 +384,7 @@ function filterTutors() {
     
     let filteredTutors = allTutors;
     
-    // Фильтр по языку преподавания
+    //фильтр по языку преподавания
     if (selectedLanguage) {
         filteredTutors = filteredTutors.filter(tutor => 
             tutor.languages_offered && 
@@ -393,21 +393,21 @@ function filterTutors() {
         );
     }
     
-    // Фильтр по уровню языка
+    //фильтр по уровню языка
     if (selectedLevel) {
         filteredTutors = filteredTutors.filter(tutor => 
             tutor.language_level === selectedLevel
         );
     }
     
-    // Фильтр по минимальному опыту
+    //фильтр по минимальному опыту
     if (minExperience > 0) {
         filteredTutors = filteredTutors.filter(tutor => 
             (tutor.work_experience || 0) >= minExperience
         );
     }
     
-    // Сбрасываем выбранного репетитора при изменении фильтров
+    //сбрасываем выбранного репетитора при изменении фильтров
     if (selectedTutorId && !filteredTutors.find(t => t.id === selectedTutorId)) {
         deselectTutor();
     }
@@ -415,7 +415,7 @@ function filterTutors() {
     displayTutorsInTable(filteredTutors);
 }
 
-// Подать заявку на курс
+//подать заявку на курс
 async function applyForCourse(courseId) {
     try {
         const course = allCourses.find(c => c.id === courseId);
@@ -426,33 +426,33 @@ async function applyForCourse(courseId) {
         
         console.log('Выбран курс:', course);
         
-        // Проверяем авторизацию
+        //проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
             return;
         }
         
-        // Сохраняем выбранный курс
+        //сохраняем выбранный курс
         sessionStorage.setItem('selectedCourse', JSON.stringify(course));
         sessionStorage.setItem('applicationType', 'course');
         
-        // Заполняем информацию о курсе
+        //заполняем информацию о курсе
         document.getElementById('orderCourseName').textContent = course.name;
         document.getElementById('orderTeacher').textContent = course.teacher;
         document.getElementById('orderLevel').textContent = course.level;
         document.getElementById('orderDuration').textContent = `${course.total_length} недель`;
         document.getElementById('basePricePerHour').textContent = Utils.formatPrice(course.course_fee_per_hour);
         
-        // Скрываем блок репетитора, показываем блок курса
+        //скрываем блок репетитора, показываем блок курса
         const courseInfo = document.getElementById('courseInfo');
         const tutorInfo = document.getElementById('tutorInfo');
         if (courseInfo) courseInfo.style.display = 'block';
         if (tutorInfo) tutorInfo.style.display = 'none';
         
-        // Сбрасываем форму
+        //сбрасываем форму
         resetOrderForm();
         
-        // Показываем модальное окно
+        //показываем модальное окно
         const modalElement = document.getElementById('orderModal');
         if (!modalElement) {
             console.error('Модальное окно #orderModal не найдено');
@@ -469,7 +469,7 @@ async function applyForCourse(courseId) {
     }
 }
 
-// Подать заявку к репетитору
+//подать заявку к репетитору
 async function applyForTutor(tutorId) {
     try {
         const tutor = allTutors.find(t => t.id === tutorId);
@@ -480,17 +480,17 @@ async function applyForTutor(tutorId) {
         
         console.log('Выбран репетитор для заявки:', tutor);
         
-        // Проверяем авторизацию
+        //проверяем авторизацию
         if (!Auth.isAuthenticated()) {
             Utils.showNotification('Для подачи заявки требуется авторизация', 'warning');
             return;
         }
         
-        // Сохраняем выбранного репетитора
+        //сохраняем выбранного репетитора
         sessionStorage.setItem('selectedTutor', JSON.stringify(tutor));
         sessionStorage.setItem('applicationType', 'tutor');
         
-        // Заполняем информацию о репетиторе
+        //заполняем информацию о репетиторе
         document.getElementById('orderTutorName').textContent = tutor.name;
         document.getElementById('orderTutorExperience').textContent = `${tutor.work_experience || 0} лет`;
         
@@ -500,16 +500,16 @@ async function applyForTutor(tutorId) {
         
         document.getElementById('tutorPricePerHour').textContent = Utils.formatPrice(tutor.price_per_hour || 0);
         
-        // Скрываем блок курса, показываем блок репетитора
+        //скрываем блок курса, показываем блок репетитора
         const courseInfo = document.getElementById('courseInfo');
         const tutorInfo = document.getElementById('tutorInfo');
         if (courseInfo) courseInfo.style.display = 'none';
         if (tutorInfo) tutorInfo.style.display = 'block';
         
-        // Сбрасываем форму
+        //сбрасываем форму
         resetOrderForm();
         
-        // Показываем модальное окно
+        //показываем модальное окно
         const modalElement = document.getElementById('orderModal');
         if (!modalElement) {
             console.error('Модальное окно #orderModal не найдено');
@@ -520,7 +520,7 @@ async function applyForTutor(tutorId) {
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
         
-        // Автоматически выбираем этого репетитора в таблице
+        //автоматически выбираем этого репетитора в таблице
         selectTutor(tutorId);
         
     } catch (error) {
@@ -529,7 +529,7 @@ async function applyForTutor(tutorId) {
     }
 }
 
-// Новая функция: проверка и применение автоматических опций
+//проверка и применение автоматических опций
 function checkAndApplyAutoOptions() {
     const autoOptions = {
         earlyRegistration: false,
@@ -543,7 +543,7 @@ function checkAndApplyAutoOptions() {
     if (selectedDate) {
         const today = new Date();
         const orderDate = new Date(selectedDate);
-        const monthDiff = (orderDate - today) / (1000 * 60 * 60 * 24 * 30); // разница в месяцах
+        const monthDiff = (orderDate - today) / (1000 * 60 * 60 * 24 * 30); //разница в месяцах
         
         if (monthDiff >= 1) {
             autoOptions.earlyRegistration = true;
@@ -613,7 +613,7 @@ function checkAndApplyAutoOptions() {
     return autoOptions;
 }
 
-// Расчет общей стоимости
+//расчет общей стоимости
 function calculateTotalPrice() {
     const applicationType = sessionStorage.getItem('applicationType');
     
@@ -622,7 +622,7 @@ function calculateTotalPrice() {
         return;
     }
     
-    // Проверяем и применяем автоматические опции
+    //проверяем и применяем автоматические опции
     const autoOptions = checkAndApplyAutoOptions();
     
     let selectedData = null;
@@ -640,7 +640,7 @@ function calculateTotalPrice() {
     const selectedDate = document.getElementById('orderDate')?.value;
     const selectedTime = document.getElementById('orderTime')?.value;
     
-    // Определяем длительность в часах
+    //определяем длительность в часах
     let durationInHours;
     if (applicationType === 'course') {
         durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
@@ -648,14 +648,14 @@ function calculateTotalPrice() {
         durationInHours = parseInt(document.getElementById('duration')?.value) || 1;
     }
     
-    // Собираем ВСЕ опции: автоматические + пользовательские
+    //собираем ВСЕ опции: автоматические + пользовательские
     const options = {
-        // Автоматические опции
+        //автоматические опции
         early_registration: autoOptions.earlyRegistration,
         group_enrollment: autoOptions.groupEnrollment,
         intensive_course: autoOptions.intensiveCourse,
         
-        // Пользовательские опции
+        //пользовательские опции
         supplementary: document.getElementById('supplementaryCheck')?.checked || false,
         personalized: document.getElementById('personalizedCheck')?.checked || false,
         excursions: document.getElementById('excursionsCheck')?.checked || false,
@@ -663,7 +663,7 @@ function calculateTotalPrice() {
         interactive: document.getElementById('interactiveCheck')?.checked || false
     };
     
-    // Рассчитываем стоимость
+    //рассчитываем стоимость
     let totalPrice = 0;
     
     try {
@@ -680,21 +680,21 @@ function calculateTotalPrice() {
         totalPrice = 0;
     }
     
-    // Отображаем итоговую стоимость
+    //отображаем итоговую стоимость
     const totalCostElement = document.getElementById('totalCost');
     if (totalCostElement) {
         totalCostElement.textContent = Utils.formatPrice(Math.round(totalPrice));
     }
 }
 
-// Инициализация модального окна заказа
+//инициализация модального окна заказа
 function initOrderModal() {
     const orderForm = document.getElementById('orderForm');
     if (!orderForm) return;
     
     orderForm.addEventListener('submit', submitOrder);
     
-    // Обработчики изменений для пересчета стоимости
+    //обработчики изменений для пересчета стоимости
     ['#orderDate', '#orderTime', '#persons', '#duration'].forEach(id => {
         const element = document.querySelector(id);
         if (element) {
@@ -702,12 +702,12 @@ function initOrderModal() {
         }
     });
     
-    // Обработчики для пользовательских чекбоксов
+    //обработчики для пользовательских чекбоксов
     document.querySelectorAll('.extra-option').forEach(checkbox => {
         checkbox.addEventListener('change', calculateTotalPrice);
     });
     
-    // Устанавливаем минимальную дату на сегодня
+    //устанавливаем минимальную дату на сегодня
     const today = new Date().toISOString().split('T')[0];
     const orderDateInput = document.getElementById('orderDate');
     if (orderDateInput) {
@@ -716,13 +716,13 @@ function initOrderModal() {
     }
 }
 
-// Сброс формы заказа
+//сброс формы заказа
 function resetOrderForm() {
     const form = document.getElementById('orderForm');
     if (form) {
         form.reset();
         
-        // Устанавливаем минимальную дату на сегодня
+        //устанавливаем минимальную дату на сегодня
         const today = new Date().toISOString().split('T')[0];
         const orderDateInput = document.getElementById('orderDate');
         if (orderDateInput) {
@@ -730,14 +730,14 @@ function resetOrderForm() {
             orderDateInput.min = today;
         }
         
-        // Устанавливаем стандартное время
+        //устанавливаем стандартное время
         const orderTimeInput = document.getElementById('orderTime');
         if (orderTimeInput) {
             orderTimeInput.value = '10:00';
         }
     }
     
-    // Скрываем плашку автоматических опций
+    //скрываем плашку автоматических опций
     const autoOptionsContainer = document.getElementById('autoAppliedOptions');
     if (autoOptionsContainer) {
         autoOptionsContainer.style.display = 'none';
@@ -746,7 +746,7 @@ function resetOrderForm() {
     calculateTotalPrice();
 }
 
-// Отправка заявки
+//отправка заявки
 async function submitOrder(event) {
     event.preventDefault();
     
@@ -777,7 +777,7 @@ async function submitOrder(event) {
             return;
         }
         
-        // Определяем длительность
+        //определяем длительность
         let durationInHours;
         if (applicationType === 'course') {
             durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
@@ -785,17 +785,17 @@ async function submitOrder(event) {
             durationInHours = parseInt(document.getElementById('duration').value) || 1;
         }
         
-        // Проверяем автоматические опции
+        //проверяем автоматические опции
         const autoOptions = checkAndApplyAutoOptions();
         
-        // Собираем ВСЕ опции
+        //собираем ВСЕ опции
         const options = {
-            // Автоматические опции
+            //автоматические опции
             early_registration: autoOptions.earlyRegistration,
             group_enrollment: autoOptions.groupEnrollment,
             intensive_course: autoOptions.intensiveCourse,
             
-            // Пользовательские опции
+            //пользовательские опции
             supplementary: document.getElementById('supplementaryCheck')?.checked || false,
             personalized: document.getElementById('personalizedCheck')?.checked || false,
             excursions: document.getElementById('excursionsCheck')?.checked || false,
@@ -803,7 +803,7 @@ async function submitOrder(event) {
             interactive: document.getElementById('interactiveCheck')?.checked || false
         };
         
-        // Рассчитываем стоимость
+        //рассчитываем стоимость
         const calculatedPrice = Utils.calculateCoursePrice(
             selectedData,
             selectedDate,
@@ -813,23 +813,23 @@ async function submitOrder(event) {
             options
         );
         
-        // Формируем данные для отправки - ДОБАВЛЯЕМ ПОЛЕ duration
+        //формируем данные для отправки
         const formData = {
             date_start: selectedDate,
             time_start: selectedTime,
             persons: studentsNumber,
-            duration: durationInHours, // ВАЖНО: добавлено поле duration для API
-            // Автоматические опции
+            duration: durationInHours,
+            //автоматические опции
             early_registration: autoOptions.earlyRegistration,
             group_enrollment: autoOptions.groupEnrollment,
             intensive_course: autoOptions.intensiveCourse,
-            // Пользовательские опции
+            //пользовательские опции
             supplementary: document.getElementById('supplementaryCheck')?.checked || false,
             personalized: document.getElementById('personalizedCheck')?.checked || false,
             excursions: document.getElementById('excursionsCheck')?.checked || false,
             assessment: document.getElementById('assessmentCheck')?.checked || false,
             interactive: document.getElementById('interactiveCheck')?.checked || false,
-            price: calculatedPrice
+            price: Math.round(calculatedPrice)
         };
         
         if (applicationType === 'course') {
@@ -842,16 +842,16 @@ async function submitOrder(event) {
         
         console.log('Отправка заявки с данными:', formData);
         
-        // Отправляем заявку
+        //отправляем заявку
         const result = await API.createOrder(formData);
         
         Utils.showNotification('Заявка успешно создана!', 'success');
         
-        // Закрываем модальное окно
+        //закрываем модальное окно
         const modal = bootstrap.Modal.getInstance(document.getElementById('orderModal'));
         modal.hide();
         
-        // Перенаправляем в личный кабинет
+        //перенаправляем в личный кабинет
         setTimeout(() => {
             window.location.href = 'cabinet.html';
         }, 1500);
@@ -862,12 +862,12 @@ async function submitOrder(event) {
     }
 }
 
-// Показать детали курса
+//показать детали курса
 async function showCourseDetails(courseId) {
     try {
         const course = await API.getCourse(courseId);
         
-        // Создаем модальное окно для деталей
+        //создаем модальное окно для деталей
         const modalHTML = `
             <div class="modal fade" id="courseDetailModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
@@ -917,14 +917,14 @@ async function showCourseDetails(courseId) {
             </div>
         `;
         
-        // Удаляем старую модалку если есть
+        //удаляем старую модалку если есть
         const oldModal = document.getElementById('courseDetailModal');
         if (oldModal) oldModal.remove();
         
-        // Добавляем новую модалку
+        //добавляем новую модалку
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        // Показываем модалку
+        //показываем модалку
         const modalElement = document.getElementById('courseDetailModal');
         if (!modalElement) {
             console.error('Модальное окно courseDetailModal не создано');
@@ -940,7 +940,7 @@ async function showCourseDetails(courseId) {
     }
 }
 
-// Поиск курсов
+//поиск курсов
 function searchCourses() {
     const nameInput = document.getElementById('courseNameInput')?.value.toLowerCase() || '';
     const levelSelect = document.getElementById('courseLevelSelect')?.value || '';
@@ -964,9 +964,9 @@ function searchCourses() {
     setupCoursesPagination();
 }
 
-// Инициализация обработчиков событий
+//инициализация обработчиков событий
 function initEventHandlers() {
-    // Поиск курсов
+    //поиск курсов
     const searchBtn = document.querySelector('button[onclick*="searchCourses"]');
     if (searchBtn) {
         searchBtn.onclick = searchCourses;
@@ -984,7 +984,7 @@ function initEventHandlers() {
         courseLevelSelect.addEventListener('change', searchCourses);
     }
     
-    // Фильтрация репетиторов
+    //фильтрация репетиторов
     const tutorLanguages = document.getElementById('tutorLanguages');
     const tutorLanguageLevel = document.getElementById('tutorLanguageLevel');
     const tutorExperience = document.getElementById('tutorExperience');
@@ -1002,7 +1002,7 @@ function initEventHandlers() {
     }
 }
 
-// Глобальные функции
+//глобальные функции
 window.searchCourses = searchCourses;
 window.filterTutors = filterTutors;
 window.applyForCourse = applyForCourse;
