@@ -127,21 +127,21 @@ function setupCoursesPagination() {
     
     let paginationHTML = `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">Назад</a>
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">Назад</a>
         </li>
     `;
     
     for (let i = 1; i <= totalPages; i++) {
         paginationHTML += `
             <li class="page-item ${currentPage === i ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
             </li>
         `;
     }
     
     paginationHTML += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">Вперед</a>
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">Вперед</a>
         </li>
     `;
     
@@ -155,7 +155,6 @@ function changePage(page) {
     currentPage = page;
     displayCourses(allCourses);
     setupCoursesPagination();
-    window.scrollTo({ top: document.getElementById('courses').offsetTop, behavior: 'smooth' });
 }
 
 //загрузка репетиторов
@@ -1000,6 +999,12 @@ function initEventHandlers() {
     if (tutorExperience) {
         tutorExperience.addEventListener('input', filterTutors);
     }
+	//предотвращаем стандартное поведение ссылок пагинации
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.pagination a')) {
+            e.preventDefault();
+        }
+    });
 }
 
 //глобальные функции
