@@ -152,13 +152,13 @@
     <section id="tutors" class="py-5">
         <div class="container">
             <h2 class="text-center mb-4">Наши репетиторы</h2>
-        
+    
             <!-- Форма поиска репетиторов -->
             <div class="row mb-4" id="tutorSearch">
                 <div class="col-md-4 mb-3">
                     <label for="tutorLanguages" class="form-label">Предлагаемые языки</label>
                     <select class="form-select" id="tutorLanguages" onchange="filterTutors()">
-                       <option value="">Все языки</option>
+                           <option value="">Все языки</option>
                        <!-- Опции будут заполнены через JS -->
                     </select>
                     <div class="form-text">Языки, которым учит репетитор</div>
@@ -177,11 +177,6 @@
                     <input type="number" class="form-control" id="tutorExperience" min="0" 
                         placeholder="0" oninput="filterTutors()">
                 </div>
-            </div>
-
-            <!-- Контейнер для действий с выбранным репетитором -->
-            <div id="tutorActionsContainer" class="mb-3" style="display: none;">
-                <!-- Будет заполнено динамически -->
             </div>
 
             <!-- Таблица результатов поиска -->
@@ -212,11 +207,9 @@
                 <p class="text-muted">Попробуйте изменить критерии поиска</p>
             </div>
 
-            <!-- Кнопка заказа репетитора (старая версия, оставляем на всякий случай) -->
-            <div class="text-center mt-4">
-                <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#orderModal">
-                    <i class="bi bi-calendar-plus"></i> Заказать занятие с репетитором
-                </button>
+            <!-- Контейнер для действий с выбранным репетитором -->
+            <div id="tutorActionsContainer" class="mb-3" style="display: none;">
+               <!-- Будет заполнено динамически -->
             </div>
         </div>
     </section>
