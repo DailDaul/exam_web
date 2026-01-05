@@ -175,7 +175,7 @@ function setupOrdersPagination() {
     
     let paginationHTML = `
         <li class="page-item ${currentOrderPage === 1 ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changeOrderPage(${currentOrderPage - 1})">
+            <a class="page-link" href="#" onclick="changeOrderPage(${currentOrderPage - 1}); return false;">
                 <i class="bi bi-chevron-left"></i>
             </a>
         </li>
@@ -192,14 +192,14 @@ function setupOrdersPagination() {
     for (let i = startPage; i <= endPage; i++) {
         paginationHTML += `
             <li class="page-item ${currentOrderPage === i ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="changeOrderPage(${i})">${i}</a>
+                <a class="page-link" href="#" onclick="changeOrderPage(${i}); return false;">${i}</a>
             </li>
         `;
     }
     
     paginationHTML += `
         <li class="page-item ${currentOrderPage === totalPages ? 'disabled' : ''}">
-            <a class="page-link" href="#" onclick="changeOrderPage(${currentOrderPage + 1})">
+            <a class="page-link" href="#" onclick="changeOrderPage(${currentOrderPage + 1}); return false;">
                 <i class="bi bi-chevron-right"></i>
             </a>
         </li>
@@ -303,7 +303,7 @@ async function showOrderDetails(orderId) {
 //редактирование заявки
 async function editOrder(orderId) {
     try {
-        //сбрасываем предыдущие данные
+        // Сбрасываем предыдущие данные
         currentEditOrderData = null;
         currentEditCourseOrTutorData = null;
         
@@ -327,22 +327,22 @@ async function editOrder(orderId) {
         document.getElementById('editAssessment').checked = order.assessment || false;
         document.getElementById('editInteractive').checked = order.interactive || false;
         
-        //загружаем данные о курсе или репетиторе
+        // Загружаем данные о курсе или репетиторе
         let durationInHours = 1;
         
         if (order.course_id > 0) {
-            //получаем данные о курсе
+            // Это курс - получаем данные о курсе
             currentEditCourseOrTutorData = await API.getCourse(order.course_id);
-            //для курса длительность = недели * часы в неделю
+            // Для курса длительность = недели * часы в неделю
             durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
         } else if (order.tutor_id > 0) {
-            //получаем данные о репетиторе
+            // Это репетитор - получаем данные о репетиторе
             currentEditCourseOrTutorData = await API.getTutor(order.tutor_id);
-            //для репетитора используем длительность из исходной заявки или 1 час
+            // Для репетитора используем длительность из исходной заявки или 1 час
             durationInHours = order.duration || 1;
         }
         
-        //показываем текущую стоимость
+        // Показываем текущую стоимость
         updateEditPricePreview();
         
         //показываем модальное окно
@@ -355,7 +355,7 @@ async function editOrder(orderId) {
     }
 }
 
-//функция предпросмотра стоимости при редактировании
+// Функция предпросмотра стоимости при редактировании
 function updateEditPricePreview() {
     if (!currentEditOrderData || !currentEditCourseOrTutorData) {
         console.warn('Нет данных для расчета стоимости');
@@ -363,7 +363,7 @@ function updateEditPricePreview() {
     }
     
     try {
-        //собираем опции из формы
+        // Собираем опции из формы
         const options = {
             early_registration: document.getElementById('editEarlyRegistration').checked,
             group_enrollment: document.getElementById('editGroupEnrollment').checked,
@@ -375,22 +375,22 @@ function updateEditPricePreview() {
             interactive: document.getElementById('editInteractive').checked
         };
         
-        //получаем значения из формы или используем оригинальные
+        // Получаем значения из формы или используем оригинальные
         const newDate = document.getElementById('editDate').value || currentEditOrderData.date_start;
         const newTime = document.getElementById('editTime').value || currentEditOrderData.time_start;
         const newPersons = parseInt(document.getElementById('editPersons').value) || currentEditOrderData.persons;
         
-        //определяем длительность в часах
+        // Определяем длительность в часах
         let durationInHours = 1;
         if (currentEditOrderData.course_id > 0) {
-            //это курс
+            // Это курс
             durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
         } else if (currentEditOrderData.tutor_id > 0) {
-            //это репетитор
+            // Это репетитор
             durationInHours = currentEditOrderData.duration || 1;
         }
         
-        //рассчитываем новую стоимость
+        // Рассчитываем новую стоимость
         const newPrice = Utils.calculateCoursePrice(
             currentEditCourseOrTutorData,
             newDate,
@@ -400,7 +400,7 @@ function updateEditPricePreview() {
             options
         );
         
-        //показываем предпросмотр
+        // Показываем предпросмотр
         const previewElement = document.getElementById('editPricePreview');
         const newPriceValue = document.getElementById('newPriceValue');
         const oldPriceValue = document.getElementById('oldPriceValue');
@@ -410,7 +410,7 @@ function updateEditPricePreview() {
             oldPriceValue.textContent = Utils.formatPrice(currentEditOrderData.price || 0);
             previewElement.style.display = 'block';
             
-            //подсветка изменения
+            // Подсветка изменения
             if (newPrice !== currentEditOrderData.price) {
                 previewElement.className = newPrice > currentEditOrderData.price ? 
                     'alert alert-warning mt-3' : 'alert alert-success mt-3';
@@ -481,18 +481,18 @@ async function saveOrderChanges(event) {
             interactive: document.getElementById('editInteractive').checked
         };
         
-        //РАСЧЕТ НОВОЙ СТОИМОСТИ
-        //определяем длительность в часах
+        // РАСЧЕТ НОВОЙ СТОИМОСТИ
+        // Определяем длительность в часах
         let durationInHours = 1;
         if (currentEditOrderData.course_id > 0) {
-            //это курс
+            // Это курс
             durationInHours = (currentEditCourseOrTutorData.week_length || 0) * (currentEditCourseOrTutorData.total_length || 0);
         } else if (currentEditOrderData.tutor_id > 0) {
-            //это репетитор
+            // Это репетитор
             durationInHours = currentEditOrderData.duration || 1;
         }
         
-        //рассчитываем новую стоимость с помощью Utils.calculateCoursePrice
+        // Рассчитываем новую стоимость с помощью Utils.calculateCoursePrice
         const options = {
             early_registration: updatedData.early_registration,
             group_enrollment: updatedData.group_enrollment,
@@ -514,7 +514,7 @@ async function saveOrderChanges(event) {
         );
         
         updatedData.price = Math.round(newPrice);
-        updatedData.duration = durationInHours; //сохраняем длительность
+        updatedData.duration = durationInHours; // Сохраняем длительность
         
         console.log('Обновление заявки с данными:', updatedData);
         
@@ -536,9 +536,9 @@ async function saveOrderChanges(event) {
     }
 }
 
-//инициализация обработчиков событий для модального окна редактирования
+// Инициализация обработчиков событий для модального окна редактирования
 function initEditModalHandlers() {
-    //удаляем старые обработчики
+    // Удаляем старые обработчики
     const formElements = [
         'editDate', 'editTime', 'editPersons',
         'editEarlyRegistration', 'editGroupEnrollment', 'editIntensiveCourse',
@@ -549,11 +549,11 @@ function initEditModalHandlers() {
     formElements.forEach(elementId => {
         const element = document.getElementById(elementId);
         if (element) {
-            //создаем копию элемента и заменяем его для сброса всех обработчиков
+            // Создаем копию элемента и заменяем его для сброса всех обработчиков
             const newElement = element.cloneNode(true);
             element.parentNode.replaceChild(newElement, element);
             
-            //добавляем новый обработчик
+            // Добавляем новый обработчик
             newElement.addEventListener('change', updateEditPricePreview);
             newElement.addEventListener('input', function() {
                 if (this.type === 'number' || this.type === 'date' || this.type === 'time') {
@@ -592,7 +592,7 @@ function initEventHandlers() {
         });
     }
     
-    //инициализация обработчиков для модального окна редактирования
+    // Инициализация обработчиков для модального окна редактирования
     initEditModalHandlers();
 }
 
