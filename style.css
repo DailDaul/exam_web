@@ -1,13 +1,20 @@
 /* кастомные стили для языковой школы */
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Balsamiq Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding-top: 20px;
+    color: #333;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
 }
 
 .navbar-brand {
     font-weight: bold;
     font-size: 1.5rem;
+    font-family: 'Balsamiq Sans', sans-serif;
 }
 
 .navbar-brand img {
@@ -16,11 +23,12 @@ body {
 
 .card {
     transition: transform 0.3s, box-shadow 0.3s;
+    border-color: rgba(106, 90, 205, 0.2);
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 20px rgba(106, 90, 205, 0.15);
 }
 
 .social-links a {
@@ -41,9 +49,59 @@ body {
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
-/* стили для кнопок */
+/* стили для кнопок - обновленные цвета */
 .btn-group-sm > .btn {
     padding: 0.25rem 0.5rem;
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 400;
+}
+
+.btn-primary {
+    background-color: #6A5ACD;
+    border-color: #6A5ACD;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.btn-primary:hover {
+    background-color: #5A4ABD;
+    border-color: #5A4ABD;
+}
+
+.btn-outline-primary {
+    color: #6A5ACD;
+    border-color: #6A5ACD;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.btn-outline-primary:hover {
+    background-color: #6A5ACD;
+    border-color: #6A5ACD;
+}
+
+.btn-success {
+    background-color: #FFD700;
+    border-color: #FFD700;
+    color: #333;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.btn-success:hover {
+    background-color: #E6C200;
+    border-color: #E6C200;
+    color: #333;
+}
+
+.btn-warning {
+    background-color: #FFD700;
+    border-color: #FFD700;
+    color: #333;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.btn-warning:hover {
+    background-color: #E6C200;
+    border-color: #E6C200;
+    color: #333;
 }
 
 /* адаптивность */
@@ -72,31 +130,67 @@ body {
 .card .display-6 {
     font-size: 2.5rem;
     font-weight: bold;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+/* новые цвета для карточек статистики */
+.bg-primary {
+    background-color: #483D8B !important;
+}
+
+.bg-success {
+    background-color: #6A5ACD !important;
+}
+
+.bg-info {
+    background-color: #9370DB !important; /* MediumPurple - близкий к основному */
+}
+
+.bg-warning {
+    background-color: #FFD700 !important;
+    color: #333 !important;
 }
 
 /* стили для модальных окон */
 .modal-body h6 {
-    color: #495057;
-    border-bottom: 2px solid #dee2e6;
+    color: #483D8B;
+    border-bottom: 2px solid #E6E6FA; /* Lavender - мягкий фиолетовый */
     padding-bottom: 0.5rem;
     margin-bottom: 1rem;
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
+}
+
+.modal-title {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
 }
 
 /* стили для аватаров */
 .avatar-placeholder {
-    background: linear-gradient(135deg, #6c757d, #495057);
+    background: linear-gradient(135deg, #6A5ACD, #483D8B);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 /* стили для футера */
+footer {
+    background-color: #483D8B !important;
+}
+
 footer a {
     text-decoration: none;
 }
 
 footer a:hover {
     text-decoration: underline;
+    color: #FFD700 !important;
+}
+
+footer h5 {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
 }
 
 /* утилитарные классы */
@@ -110,14 +204,33 @@ footer a:hover {
 
 /* стили для форм */
 .form-control:focus {
-    border-color: #80bdff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    border-color: #6A5ACD;
+    box-shadow: 0 0 0 0.2rem rgba(106, 90, 205, 0.25);
+}
+
+.form-select:focus {
+    border-color: #6A5ACD;
+    box-shadow: 0 0 0 0.2rem rgba(106, 90, 205, 0.25);
+}
+
+.form-label {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 400;
+}
+
+.form-control, .form-select {
+    font-family: 'Balsamiq Sans', sans-serif;
 }
 
 /* загрузка и спиннеры */
 .spinner-border {
     width: 3rem;
     height: 3rem;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.spinner-border.text-primary {
+    color: #6A5ACD !important;
 }
 
 /* стили для пустых состояний */
@@ -131,4 +244,147 @@ footer a:hover {
     font-size: 4rem;
     margin-bottom: 1rem;
     opacity: 0.5;
+}
+
+/* цвет для навигации */
+.navbar-dark.bg-dark {
+    background-color: #483D8B !important;
+}
+
+.nav-link.active {
+    color: #FFD700 !important;
+}
+
+.nav-link:hover {
+    color: #FFD700 !important;
+}
+
+.nav-link {
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+/* цвет для таблиц */
+.table-dark {
+    background-color: #483D8B !important;
+}
+
+.table th {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(106, 90, 205, 0.1);
+}
+
+/* цвет для бейджей */
+.badge.bg-primary {
+    background-color: #6A5ACD !important;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.badge.bg-info {
+    background-color: #9370DB !important;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.badge.bg-warning {
+    background-color: #FFD700 !important;
+    color: #333;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+/* цвет для алертов */
+.alert-primary {
+    background-color: rgba(106, 90, 205, 0.1);
+    border-color: rgba(106, 90, 205, 0.2);
+    color: #483D8B;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.alert-success {
+    background-color: rgba(255, 215, 0, 0.1);
+    border-color: rgba(255, 215, 0, 0.3);
+    color: #333;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.alert-warning {
+    background-color: rgba(255, 215, 0, 0.15);
+    border-color: rgba(255, 215, 0, 0.4);
+    color: #333;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.alert-info {
+    background-color: rgba(147, 112, 219, 0.1);
+    border-color: rgba(147, 112, 219, 0.2);
+    color: #483D8B;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.alert {
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+/* цвет для ссылок */
+a {
+    color: #6A5ACD;
+}
+
+a:hover {
+    color: #483D8B;
+}
+
+/* для заголовков и текста */
+.card-title {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
+}
+
+.lead {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 400;
+}
+
+.display-4, .display-5, .display-6 {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
+}
+
+.btn {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 400;
+}
+
+/* пагинация */
+.page-item.active .page-link {
+    background-color: #6A5ACD;
+    border-color: #6A5ACD;
+}
+
+.page-link {
+    color: #6A5ACD;
+    font-family: 'Balsamiq Sans', sans-serif;
+}
+
+.page-link:hover {
+    color: #483D8B;
+}
+
+/* чекбоксы */
+.form-check-input:focus {
+    border-color: #6A5ACD;
+    box-shadow: 0 0 0 0.2rem rgba(106, 90, 205, 0.25);
+}
+
+.form-check-input:checked {
+    background-color: #6A5ACD;
+    border-color: #6A5ACD;
+}
+
+/* селекты */
+select[multiple] option:checked {
+    background-color: #6A5ACD;
+    color: white;
 }
