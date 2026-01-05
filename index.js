@@ -322,37 +322,37 @@ function showTutorActionsPanel(tutorId) {
     
     actionsContainer.style.display = 'block';
     actionsContainer.innerHTML = `
-        <div class="card">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h5 class="card-title mb-1">
-                            <i class="bi bi-check-circle-fill text-success"></i>
-                            Выбран репетитор: ${tutor.name}
-                        </h5>
-                        <p class="card-text mb-1">
-                            <strong>Языки преподавания:</strong> ${teachingLanguages}
-                        </p>
-                        <p class="card-text mb-1">
-                            <strong>Опыт:</strong> ${tutor.work_experience || 0} лет |
-                            <strong>Уровень:</strong> ${tutor.language_level || 'Не указано'}
-                        </p>
-                        <p class="card-text mb-0">
-                            <strong>Стоимость:</strong> ${Utils.formatPrice(tutor.price_per_hour || 0)} ₽/час
-                        </p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <button class="btn btn-success btn-lg" onclick="applyForTutor(${tutorId})">
-                            <i class="bi bi-calendar-plus"></i> Подать заявку
-                        </button>
-                        <button class="btn btn-outline-secondary mt-2" onclick="deselectTutor()">
-                            <i class="bi bi-x-circle"></i> Отмена выбора
-                        </button>
-                    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="card-title mb-1">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        Выбран репетитор: ${tutor.name}
+                    </h5>
+                    <p class="card-text mb-1">
+                        <strong>Языки преподавания:</strong> ${teachingLanguages}
+                    </p>
+                    <p class="card-text mb-1">
+                        <strong>Опыт:</strong> ${tutor.work_experience || 0} лет |
+                        <strong>Уровень:</strong> ${tutor.language_level || 'Не указано'}
+                    </p>
+                    <p class="card-text mb-0">
+                        <strong>Стоимость:</strong> ${Utils.formatPrice(tutor.price_per_hour || 0)} ₽/час
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-success btn-lg" onclick="applyForTutor(${tutorId})">
+                        <i class="bi bi-calendar-plus"></i> Подать заявку
+                    </button>
+                    <button class="btn btn-outline-secondary mt-2" onclick="deselectTutor()">
+                        <i class="bi bi-x-circle"></i> Отмена выбора
+                    </button>
                 </div>
             </div>
         </div>
-    `;
+    </div>
+`   ;
     
     //прокручиваем к панели действий
     actionsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
