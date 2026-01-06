@@ -1448,7 +1448,7 @@ async function showCourseDetails(courseId) {
                                     <p><strong>Стоимость:</strong> ${Utils.formatPrice(course.course_fee_per_hour)} ₽/час</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>Даты начала из API:</h6>
+                                    <h6>Даты начала:</h6>
                                     <ul class="list-group">
                                         ${(course.start_dates || []).map(date => {
                                             const dateObj = new Date(date);
