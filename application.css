@@ -273,3 +273,120 @@ select[multiple] option {
 .card.bg-primary.text-white {
     background-color: #6A5ACD !important;
 }
+
+/* Стили для автоматически примененных опций */
+#autoAppliedOptions {
+    border-left: 4px solid #FFD700;
+    background-color: rgba(255, 215, 0, 0.05);
+    animation: slideIn 0.5s ease-out;
+}
+
+#autoAppliedOptions h6 {
+    font-family: 'Balsamiq Sans', sans-serif;
+    font-weight: 700;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Стили для иконок опций */
+#autoOptionsList .bi {
+    font-size: 1.2rem;
+    color: #6A5ACD;
+}
+
+/* Подсветка примененных опций */
+.auto-option-applied {
+    background-color: rgba(106, 90, 205, 0.1);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #483D8B;
+}
+
+/* Адаптивность для плашки */
+@media (max-width: 768px) {
+    #autoAppliedOptions {
+        font-size: 0.9rem;
+    }
+}
+
+/* цвет для карточек с итоговой стоимостью */
+.card.bg-primary.text-white {
+    background-color: #6A5ACD !important;
+}
+
+/* стили для нередактируемых полей */
+.form-control[readonly] {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    color: #495057;
+    font-weight: 400;
+}
+
+.form-control[readonly]:focus {
+    box-shadow: none;
+    border-color: #dee2e6;
+}
+
+/* стили для поля даты окончания */
+#courseEndDate {
+    color: #6A5ACD;
+    font-weight: 600;
+}
+
+/* стили для заголовков секций */
+h6.fw-bold.border-bottom {
+    color: #483D8B;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #E6E6FA !important;
+}
+
+/* адаптивность для новой структуры */
+@media (max-width: 768px) {
+    .modal-dialog.modal-lg {
+        margin: 0.5rem;
+    }
+    
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .input-group-text {
+        font-size: 0.9rem;
+    }
+}
+
+/* стили для подсказок */
+.form-text {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* улучшенные стили для опций */
+.form-check-label {
+    user-select: none;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.form-check-input:checked ~ .form-check-label {
+    color: #483D8B;
+    font-weight: 500;
+}
+
+/* анимация для стоимости */
+#totalCost {
+    transition: transform 0.3s ease;
+}
+
+#totalCost.updating {
+    transform: scale(1.05);
+}
