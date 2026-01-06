@@ -277,7 +277,7 @@ function displayTutorsInTable(tutors) {
                                 title="Выбрать репетитора">
                             <i class="bi bi-check-circle"></i> Выбрать
                         </button>
-                        <button class="btn btn-outline-success" onclick="applyForTutor(${tutor.id})" 
+                        <button class="btn btn-outline-warning" onclick="applyForTutor(${tutor.id})" 
                                 title="Подать заявку">
                             <i class="bi bi-calendar-plus"></i> Заявка
                         </button>
@@ -344,7 +344,7 @@ function showTutorActionsPanel(tutorId) {
                     <button class="btn btn-success btn-lg" onclick="applyForTutor(${tutorId})">
                         <i class="bi bi-calendar-plus"></i> Подать заявку
                     </button>
-                    <button class="btn btn-outline-secondary mt-2" onclick="deselectTutor()">
+                    <button class="btn btn-outline-dark mt-2" onclick="deselectTutor()">
                         <i class="bi bi-x-circle"></i> Отмена выбора
                     </button>
                 </div>
@@ -859,7 +859,7 @@ function createTutorApplicationModal(tutor) {
                         </div>
                         
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Отмена</button>
                             <button type="submit" class="btn btn-primary">Отправить заявку</button>
                         </div>
                     </form>
@@ -1472,7 +1472,7 @@ async function showCourseDetails(courseId) {
                             <button type="button" class="btn btn-primary" onclick="applyForCourse(${course.id})" data-bs-dismiss="modal">
                                 Подать заявку
                             </button>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                            <button type="button" class="btn btn-dark" data-bs-dismiss="modal">Закрыть</button>
                         </div>
                     </div>
                 </div>
