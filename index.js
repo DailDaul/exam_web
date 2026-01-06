@@ -103,7 +103,7 @@ function displayCourses(courses) {
                         <button class="btn btn-primary" onclick="applyForCourse(${course.id})">
                             <i class="bi bi-pencil-square"></i> Подать заявку
                         </button>
-                        <button class="btn btn-outline-secondary" onclick="showCourseDetails(${course.id})">
+                        <button class="btn btn-outline-dark" onclick="showCourseDetails(${course.id})">
                             <i class="bi bi-info-circle"></i> Подробнее
                         </button>
                     </div>
