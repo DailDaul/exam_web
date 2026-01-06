@@ -90,16 +90,16 @@ function displayCourses(courses) {
     
     container.innerHTML = paginatedCourses.map(course => `
         <div class="col-md-4 mb-4">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
+            <div class="card h-100 shadow-sm d-flex flex-column">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">${course.name}</h5>
                     <h6 class="card-subtitle mb-2 text-muted">Уровень: ${course.level}</h6>
-                    <p class="card-text">${course.description || 'Описание отсутствует'}</p>
+                    <p class="card-text flex-grow-1">${course.description || 'Описание отсутствует'}</p>
                     <p><strong>Преподаватель:</strong> ${course.teacher}</p>
                     <p><strong>Длительность:</strong> ${course.total_length} недель (${course.week_length} часов/неделю)</p>
                     <p><strong>Стоимость:</strong> ${Utils.formatPrice(course.course_fee_per_hour)} ₽/час</p>
-                    
-                    <div class="d-grid gap-2 mt-3">
+            
+                    <div class="d-grid gap-2 mt-auto pt-3 border-top">
                         <button class="btn btn-primary" onclick="applyForCourse(${course.id})">
                             <i class="bi bi-pencil-square"></i> Подать заявку
                         </button>
