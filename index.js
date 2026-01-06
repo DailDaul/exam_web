@@ -431,16 +431,23 @@ async function applyForCourse(courseId) {
             return;
         }
         
+        //загружаем полные данные курса с датами начала
+        const fullCourseData = await API.getCourse(courseId);
+        
         //сохраняем выбранный курс
-        sessionStorage.setItem('selectedCourse', JSON.stringify(course));
+        sessionStorage.setItem('selectedCourse', JSON.stringify(fullCourseData));
         sessionStorage.setItem('applicationType', 'course');
         
         //заполняем информацию о курсе
-        document.getElementById('orderCourseName').textContent = course.name;
-        document.getElementById('orderTeacher').textContent = course.teacher;
-        document.getElementById('orderLevel').textContent = course.level;
-        document.getElementById('orderDuration').textContent = `${course.total_length} недель`;
-        document.getElementById('basePricePerHour').textContent = Utils.formatPrice(course.course_fee_per_hour);
+        document.getElementById('orderCourseName').textContent = fullCourseData.name;
+        document.getElementById('orderTeacher').textContent = fullCourseData.teacher;
+        document.getElementById('orderLevel').textContent = fullCourseData.level;
+        
+        //длительность курса в неделях
+        const durationWeeks = fullCourseData.total_length || 1;
+        document.getElementById('orderDuration').textContent = `${durationWeeks} недель`;
+        
+        document.getElementById('basePricePerHour').textContent = Utils.formatPrice(fullCourseData.course_fee_per_hour);
         
         //скрываем блок репетитора, показываем блок курса
         const courseInfo = document.getElementById('courseInfo');
@@ -448,8 +455,80 @@ async function applyForCourse(courseId) {
         if (courseInfo) courseInfo.style.display = 'block';
         if (tutorInfo) tutorInfo.style.display = 'none';
         
-        //сбрасываем форму
-        resetOrderForm();
+        // 1. Поле для выбора даты начала курса (только доступные даты из API)
+        const dateSelect = document.getElementById('courseStartDate');
+        if (!dateSelect) {
+            //создаем элемент если его нет
+            const form = document.getElementById('orderForm');
+            if (form) {
+                //добавляем поле выбора даты
+                const dateFieldHtml = `
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Дата начала курса *</label>
+                            <select class="form-control" id="courseStartDate" required>
+                                <option value="">Выберите дату начала</option>
+                                <!-- Даты заполнятся через JS -->
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Время занятия *</label>
+                            <select class="form-control" id="courseTimeSelect" required disabled>
+                                <option value="">Сначала выберите дату</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Продолжительность курса</label>
+                            <div class="form-control" style="background-color: #f8f9fa;">
+                                <div id="courseDurationDisplay">
+                                    ${durationWeeks} недель
+                                </div>
+                                <div id="courseEndDateDisplay" class="small text-muted mt-1">
+                                    Дата окончания: <span id="courseEndDate">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Количество студентов в группе (1-20) *</label>
+                            <input type="number" class="form-control" id="coursePersons" min="1" max="20" value="1" required>
+                        </div>
+                    </div>
+                `;
+                
+                //находим место для вставки (после блока информации о курсе)
+                const tutorInfoBlock = document.getElementById('tutorInfo');
+                if (tutorInfoBlock) {
+                    tutorInfoBlock.insertAdjacentHTML('afterend', dateFieldHtml);
+                }
+            }
+        }
+        
+        //заполняем доступные даты начала
+        populateCourseStartDates(fullCourseData.start_dates || []);
+        
+        //устанавливаем расчет даты окончания
+        setupCourseDurationCalculation(fullCourseData.total_length || 1);
+        
+        //скрываем стандартные поля даты/времени для курса
+        const standardDateRow = document.querySelector('#orderForm .row.mb-3:first-child');
+        if (standardDateRow) {
+            standardDateRow.style.display = 'none';
+        }
+        
+        //скрываем поле длительности для курса
+        const durationField = document.querySelector('#duration').closest('.col-md-6');
+        if (durationField) {
+            durationField.style.display = 'none';
+        }
+        
+        //переименовываем поле persons
+        const personsLabel = document.querySelector('label[for="persons"]');
+        if (personsLabel) {
+            personsLabel.textContent = 'Количество студентов в группе (1-20) *';
+        }
         
         //показываем модальное окно
         const modalElement = document.getElementById('orderModal');
@@ -466,6 +545,121 @@ async function applyForCourse(courseId) {
         console.error('Ошибка при выборе курса:', error);
         Utils.showNotification(`Ошибка: ${error.message}`, 'danger');
     }
+}
+
+//заполнение доступных дат начала курса
+function populateCourseStartDates(startDates) {
+    const dateSelect = document.getElementById('courseStartDate');
+    if (!dateSelect) return;
+    
+    dateSelect.innerHTML = '<option value="">Выберите дату начала</option>';
+    
+    if (!startDates || startDates.length === 0) {
+        dateSelect.innerHTML += '<option value="" disabled>Нет доступных дат</option>';
+        return;
+    }
+    
+    //сортируем даты по возрастанию
+    const sortedDates = startDates.sort((a, b) => new Date(a) - new Date(b));
+    
+    sortedDates.forEach(dateStr => {
+        try {
+            const date = new Date(dateStr);
+            const option = document.createElement('option');
+            option.value = dateStr;
+            option.textContent = date.toLocaleDateString('ru-RU', {
+                weekday: 'short',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            dateSelect.appendChild(option);
+        } catch (e) {
+            console.warn('Некорректная дата:', dateStr);
+        }
+    });
+}
+
+//настройка расчета даты окончания
+function setupCourseDurationCalculation(totalWeeks) {
+    const dateSelect = document.getElementById('courseStartDate');
+    const endDateSpan = document.getElementById('courseEndDate');
+    
+    if (!dateSelect || !endDateSpan) return;
+    
+    dateSelect.addEventListener('change', function() {
+        const selectedDate = this.value;
+        const timeSelect = document.getElementById('courseTimeSelect');
+        
+        if (selectedDate) {
+            //включаем выбор времени
+            if (timeSelect) {
+                timeSelect.disabled = false;
+                populateCourseTimes(selectedDate);
+            }
+            
+            //рассчитываем дату окончания
+            try {
+                const startDate = new Date(selectedDate);
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + (totalWeeks * 7)); // Добавляем недели
+                
+                endDateSpan.textContent = endDate.toLocaleDateString('ru-RU', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                endDateSpan.textContent = '-';
+            }
+        } else {
+            //отключаем выбор времени
+            if (timeSelect) {
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Сначала выберите дату</option>';
+            }
+            endDateSpan.textContent = '-';
+        }
+        
+        //пересчитываем стоимость
+        calculateTotalPrice();
+    });
+}
+
+//заполнение времени занятий
+function populateCourseTimes(startDate) {
+    const timeSelect = document.getElementById('courseTimeSelect');
+    if (!timeSelect) return;
+    
+    timeSelect.innerHTML = '<option value="">Выберите время</option>';
+    
+    //примерные времена занятий (можно адаптировать под данные из API)
+    const availableTimes = ['09:00', '11:00', '13:00', '15:00', '17:00', '19:00'];
+    
+    //получаем данные курса
+    const courseData = JSON.parse(sessionStorage.getItem('selectedCourse') || '{}');
+    const hoursPerWeek = courseData.week_length || 1;
+    
+    availableTimes.forEach(time => {
+        try {
+            const [hours, minutes] = time.split(':');
+            const option = document.createElement('option');
+            option.value = time;
+            
+            //вычисляем время окончания
+            const endTime = new Date(`2000-01-01T${time}:00`);
+            endTime.setHours(endTime.getHours() + hoursPerWeek);
+            
+            const endTimeStr = endTime.toTimeString().substring(0, 5);
+            option.textContent = `${time} - ${endTimeStr}`;
+            
+            timeSelect.appendChild(option);
+        } catch (e) {
+            console.warn('Ошибка обработки времени:', time);
+        }
+    });
+    
+    timeSelect.addEventListener('change', calculateTotalPrice);
 }
 
 //подать заявку к репетитору
@@ -635,15 +829,20 @@ function calculateTotalPrice() {
         return;
     }
     
-    const studentsNumber = parseInt(document.getElementById('persons')?.value) || 1;
-    const selectedDate = document.getElementById('orderDate')?.value;
-    const selectedTime = document.getElementById('orderTime')?.value;
+    //для курса используем специальные поля
+    let selectedDate, selectedTime, studentsNumber, durationInHours;
     
-    //определяем длительность в часах
-    let durationInHours;
     if (applicationType === 'course') {
+        selectedDate = document.getElementById('courseStartDate')?.value;
+        selectedTime = document.getElementById('courseTimeSelect')?.value;
+        studentsNumber = parseInt(document.getElementById('coursePersons')?.value) || 1;
+        
+        // Для курса длительность = недели * часы в неделю
         durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
     } else {
+        selectedDate = document.getElementById('orderDate')?.value;
+        selectedTime = document.getElementById('orderTime')?.value;
+        studentsNumber = parseInt(document.getElementById('persons')?.value) || 1;
         durationInHours = parseInt(document.getElementById('duration')?.value) || 1;
     }
     
@@ -721,7 +920,7 @@ function resetOrderForm() {
     if (form) {
         form.reset();
         
-        //устанавливаем минимальную дату на сегодня
+        //устанавливаем минимальную дату на сегодня (для репетиторов)
         const today = new Date().toISOString().split('T')[0];
         const orderDateInput = document.getElementById('orderDate');
         if (orderDateInput) {
@@ -729,10 +928,49 @@ function resetOrderForm() {
             orderDateInput.min = today;
         }
         
-        //устанавливаем стандартное время
+        //устанавливаем стандартное время (для репетиторов)
         const orderTimeInput = document.getElementById('orderTime');
         if (orderTimeInput) {
             orderTimeInput.value = '10:00';
+        }
+        
+        //сбрасываем специальные поля для курса
+        const courseStartDate = document.getElementById('courseStartDate');
+        const courseTimeSelect = document.getElementById('courseTimeSelect');
+        const coursePersons = document.getElementById('coursePersons');
+        const courseEndDate = document.getElementById('courseEndDate');
+        
+        if (courseStartDate) courseStartDate.selectedIndex = 0;
+        if (courseTimeSelect) {
+            courseTimeSelect.disabled = true;
+            courseTimeSelect.innerHTML = '<option value="">Сначала выберите дату</option>';
+        }
+        if (coursePersons) coursePersons.value = 1;
+        if (courseEndDate) courseEndDate.textContent = '-';
+        
+        //показываем/скрываем соответствующие поля в зависимости от типа заявки
+        const applicationType = sessionStorage.getItem('applicationType');
+        const standardFields = document.querySelectorAll('#orderDate, #orderTime, #persons, #duration');
+        const courseFields = document.querySelectorAll('#courseStartDate, #courseTimeSelect, #coursePersons');
+        
+        if (applicationType === 'course') {
+            standardFields.forEach(field => {
+                const parent = field.closest('.row');
+                if (parent) parent.style.display = 'none';
+            });
+            courseFields.forEach(field => {
+                const parent = field.closest('.row');
+                if (parent) parent.style.display = '';
+            });
+        } else {
+            standardFields.forEach(field => {
+                const parent = field.closest('.row');
+                if (parent) parent.style.display = '';
+            });
+            courseFields.forEach(field => {
+                const parent = field.closest('.row');
+                if (parent) parent.style.display = 'none';
+            });
         }
     }
     
@@ -767,20 +1005,31 @@ async function submitOrder(event) {
             return;
         }
         
-        const selectedDate = document.getElementById('orderDate').value;
-        const selectedTime = document.getElementById('orderTime').value;
-        const studentsNumber = parseInt(document.getElementById('persons').value) || 1;
+        let selectedDate, selectedTime, studentsNumber, durationInHours;
         
-        if (!selectedDate || !selectedTime) {
-            Utils.showNotification('Выберите дату и время занятия', 'warning');
-            return;
-        }
-        
-        //определяем длительность
-        let durationInHours;
+        // Для курса используем специальные поля
         if (applicationType === 'course') {
+            selectedDate = document.getElementById('courseStartDate')?.value;
+            selectedTime = document.getElementById('courseTimeSelect')?.value;
+            studentsNumber = parseInt(document.getElementById('coursePersons')?.value) || 1;
+            
+            if (!selectedDate || !selectedTime) {
+                Utils.showNotification('Выберите дату и время начала курса', 'warning');
+                return;
+            }
+            
+            // Для курса длительность = недели * часы в неделю
             durationInHours = (selectedData.week_length || 0) * (selectedData.total_length || 0);
         } else {
+            selectedDate = document.getElementById('orderDate').value;
+            selectedTime = document.getElementById('orderTime').value;
+            studentsNumber = parseInt(document.getElementById('persons').value) || 1;
+            
+            if (!selectedDate || !selectedTime) {
+                Utils.showNotification('Выберите дату и время занятия', 'warning');
+                return;
+            }
+            
             durationInHours = parseInt(document.getElementById('duration').value) || 1;
         }
         
