@@ -40,15 +40,6 @@ h1, h2, h3, h4, h5, h6 {
     text-decoration: none;
 }
 
-#notification-area {
-    z-index: 9999;
-}
-
-#notification-area .alert {
-    max-width: 400px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
-
 /* стили для кнопок - обновленные цвета */
 .btn-group-sm > .btn {
     padding: 0.25rem 0.5rem;
@@ -387,4 +378,56 @@ a:hover {
 select[multiple] option:checked {
     background-color: #6A5ACD;
     color: white;
+}
+
+
+/* стили для области уведомлений под шапкой */
+#notification-area {
+    position: fixed;
+    top: 70px; /* высота навигационной панели + небольшой отступ */
+    right: 1rem;
+    z-index: 1055; 
+    width: auto;
+    max-width: 400px;
+}
+
+#notification-area .alert {
+    max-width: 350px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    animation: slideDownNotification 0.3s ease-out;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* анимация появления уведомлений */
+@keyframes slideDownNotification {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* анимация исчезновения */
+#notification-area .alert.fade {
+    transition: opacity 0.15s linear;
+}
+
+/* адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    #notification-area {
+        top: 60px; /* Меньше на мобильных */
+        right: 0.5rem;
+        left: 0.5rem;
+        max-width: none;
+    }
+    
+    #notification-area .alert {
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
 }
