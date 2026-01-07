@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 });
 
 //загрузка заявок пользователя
+//загрузка заявок пользователя
 async function loadOrders() {
     try {
         const tableBody = document.getElementById('ordersTableBody');
@@ -46,6 +47,16 @@ async function loadOrders() {
         
         allOrders = await API.getOrders();
         console.log('Загружено заявок:', allOrders.length);
+        
+        // СОРТИРУЕМ ЗАЯВКИ: сначала самые новые (по дате создания/ID), потом самые старые
+        allOrders.sort((a, b) => {
+            //cначала пробуем сортировать по дате создания, если она есть
+            if (a.created_at && b.created_at) {
+                return new Date(b.created_at) - new Date(a.created_at);
+            }
+            //иначе сортируем по ID (предполагаем, что новые заявки имеют больший ID)
+            return b.id - a.id;
+        });
         
         updateStatistics();
         displayOrders(allOrders);
